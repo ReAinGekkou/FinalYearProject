@@ -1,72 +1,47 @@
 package com.example.finalyearproject.data.repository
 
-import android.net.Uri
+import com.example.finalyearproject.data.model.Blog
 import com.example.finalyearproject.data.model.Favorite
 import com.example.finalyearproject.data.model.Recipe
 import com.example.finalyearproject.data.model.Review
 import com.example.finalyearproject.data.model.User
 import com.example.finalyearproject.data.remote.firebase.AuthService
 import com.example.finalyearproject.data.remote.firebase.FirestoreService
-import com.example.finalyearproject.data.remote.firebase.StorageService
+import com.example.finalyearproject.utils.Constants
 import com.example.finalyearproject.utils.Resource
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
-import javax.inject.Singleton
-
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AuthRepository.kt
-//
-// Orchestrates registration (Auth + Firestore user doc creation) and login.
-// Domain layer only talks to this — never to Firebase directly.
+// AuthRepository
 // ─────────────────────────────────────────────────────────────────────────────
-@Singleton
-class AuthRepository @Inject constructor(
-    private val authService: AuthService,
-    private val firestoreService: FirestoreService
+
+class AuthRepository(
+    private val authService: AuthService = AuthService.getInstance(),
+    private val firestoreService: FirestoreService = FirestoreService.getInstance()
 ) {
 
     val currentUser: FirebaseUser? get() = authService.currentUser
     val currentUserId: String?    get() = authService.currentUserId
     val isLoggedIn: Boolean       get() = authService.isLoggedIn
 
-    /**
-     * Full registration flow:
-     * 1. Create Firebase Auth account
-     * 2. Write user document to Firestore
-     *
-     * If Firestore write fails we still return success (the user can update
-     * their profile later). A Cloud Function can also handle this sync.
-     */
     suspend fun register(
         email: String,
         password: String,
         displayName: String
     ): Resource<Unit> {
-        // Step 1 — Auth
         val authResult = authService.register(email, password)
-        if (authResult is Resource.Error) {
-            return Resource.Error(authResult.message)
-        }
+        if (authResult is Resource.Error) return Resource.Error(authResult.message)
 
         val uid = authService.currentUserId
-            ?: return Resource.Error("Failed to retrieve user ID after registration.")
+            ?: return Resource.Error("Failed to retrieve user ID.")
 
-        // Step 2 — Firestore profile doc
-        val user = User(
-            uid = uid,
-            email = email,
-            displayName = displayName
-        )
-        firestoreService.addUser(user)  // best-effort; don't block registration on this
+        val user = User(uid = uid, email = email, displayName = displayName)
+        firestoreService.addUser(user)
 
         return Resource.Success(Unit)
     }
 
-    /**
-     * Signs in and returns the authenticated [FirebaseUser] on success.
-     */
     suspend fun login(email: String, password: String): Resource<FirebaseUser> {
         val result = authService.login(email, password)
         return when (result) {
@@ -84,167 +59,212 @@ class AuthRepository @Inject constructor(
 
     suspend fun sendPasswordReset(email: String): Resource<Unit> =
         authService.sendPasswordResetEmail(email)
+
+    companion object {
+        @Volatile private var instance: AuthRepository? = null
+        fun getInstance(): AuthRepository =
+            instance ?: synchronized(this) {
+                instance ?: AuthRepository().also { instance = it }
+            }
+    }
 }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RecipeRepository.kt
-//
-// Single repository for all recipe, review, and favorite operations.
-// Exposes both suspend functions (one-shot) and Flow (real-time).
+// RecipeRepository
 // ─────────────────────────────────────────────────────────────────────────────
-@Singleton
-class RecipeRepository @Inject constructor(
-    private val firestoreService: FirestoreService,
-    private val storageService: StorageService
+
+class RecipeRepository(
+    private val firestoreService: FirestoreService = FirestoreService.getInstance()
 ) {
 
-    // ── Recipes ───────────────────────────────────────────────────────────────
+    // ── Add ───────────────────────────────────────────────────────────────────
 
     /**
-     * Publishes a new recipe. If an image [Uri] is provided, it is uploaded
-     * first and the download URL is embedded in the [Recipe] object.
+     * Validates before writing to Firestore.
+     * Business rule: title, at least 1 ingredient, at least 1 instruction step.
      */
-    suspend fun addRecipe(
-        recipe: Recipe,
-        imageUri: Uri? = null
-    ): Resource<String> {
-        val finalRecipe = if (imageUri != null) {
-            // Temporary ID for storage path — will be replaced by Firestore auto-ID
-            val tempId = System.currentTimeMillis().toString()
-            when (val upload = storageService.uploadRecipeImage(tempId, imageUri)) {
-                is Resource.Success -> recipe.copy(imageUrl = upload.data)
-                is Resource.Error   -> return Resource.Error(upload.message)
-                else -> recipe
-            }
-        } else recipe
+    suspend fun addRecipe(recipe: Recipe): Resource<String> {
+        // Validation
+        if (recipe.title.isBlank())
+            return Resource.Error("Recipe title cannot be empty.")
+        if (recipe.title.length > Constants.MAX_RECIPE_TITLE_LENGTH)
+            return Resource.Error("Title must be ${Constants.MAX_RECIPE_TITLE_LENGTH} characters or fewer.")
+        if (recipe.ingredients.isEmpty())
+            return Resource.Error("Add at least one ingredient.")
+        if (recipe.instructions.isEmpty())
+            return Resource.Error("Add at least one instruction step.")
+        if (recipe.ingredients.size > Constants.MAX_INGREDIENTS)
+            return Resource.Error("Maximum ${Constants.MAX_INGREDIENTS} ingredients allowed.")
 
-        return firestoreService.addRecipe(finalRecipe)
+        return firestoreService.addRecipe(recipe)
     }
 
-    suspend fun getRecipes(limit: Long = 20): Resource<List<Recipe>> =
+    // ── Read ──────────────────────────────────────────────────────────────────
+
+    suspend fun getRecipes(limit: Long = Constants.PAGE_SIZE_RECIPES): Resource<List<Recipe>> =
         firestoreService.getRecipes(limit)
 
-    fun observeRecipes(limit: Long = 20): Flow<Resource<List<Recipe>>> =
+    fun observeRecipes(limit: Long = Constants.PAGE_SIZE_RECIPES): Flow<Resource<List<Recipe>>> =
         firestoreService.observeRecipes(limit)
 
-    suspend fun getRecipeById(recipeId: String): Resource<Recipe> =
-        firestoreService.getRecipeById(recipeId)
+    suspend fun getRecipeById(recipeId: String): Resource<Recipe> {
+        if (recipeId.isBlank()) return Resource.Error("Invalid recipe ID.")
+        return firestoreService.getRecipeById(recipeId)
+    }
 
-    suspend fun getRecipesByAuthor(authorId: String): Resource<List<Recipe>> =
-        firestoreService.getRecipesByAuthor(authorId)
+    suspend fun getRecipesByAuthor(authorId: String): Resource<List<Recipe>> {
+        if (authorId.isBlank()) return Resource.Error("Invalid author ID.")
+        return firestoreService.getRecipesByAuthor(authorId)
+    }
 
-    suspend fun deleteRecipe(recipeId: String): Resource<Unit> =
-        firestoreService.deleteRecipe(recipeId)
+    suspend fun getRecipesByCategory(category: String): Resource<List<Recipe>> {
+        if (category.isBlank()) return Resource.Error("Category cannot be empty.")
+        return firestoreService.getRecipesByCategory(category)
+    }
+
+    // ── Update ────────────────────────────────────────────────────────────────
+
+    suspend fun updateRecipe(recipeId: String, fields: Map<String, Any?>): Resource<Unit> {
+        if (recipeId.isBlank()) return Resource.Error("Invalid recipe ID.")
+        return firestoreService.updateRecipe(recipeId, fields)
+    }
+
+    // ── Delete ────────────────────────────────────────────────────────────────
+
+    suspend fun deleteRecipe(recipeId: String): Resource<Unit> {
+        if (recipeId.isBlank()) return Resource.Error("Invalid recipe ID.")
+        return firestoreService.deleteRecipe(recipeId)
+    }
 
     // ── Reviews ───────────────────────────────────────────────────────────────
 
-    suspend fun addReview(
-        review: Review,
-        imageUris: List<Uri> = emptyList()
-    ): Resource<String> {
-        val finalReview = if (imageUris.isNotEmpty()) {
-            val tempId = System.currentTimeMillis().toString()
-            when (val upload = storageService.uploadReviewImages(tempId, imageUris)) {
-                is Resource.Success -> review.copy(imageUrls = upload.data)
-                is Resource.Error   -> return Resource.Error(upload.message)
-                else -> review
-            }
-        } else review
+    /**
+     * Validates rating range (1–5) before writing.
+     */
+    suspend fun addReview(review: Review): Resource<String> {
+        if (review.recipeId.isBlank()) return Resource.Error("Invalid recipe ID.")
+        if (review.comment.isBlank()) return Resource.Error("Review comment cannot be empty.")
+        if (review.rating < Constants.MIN_RATING || review.rating > Constants.MAX_RATING)
+            return Resource.Error("Rating must be between 1 and 5.")
 
-        return firestoreService.addReview(finalReview)
+        return firestoreService.addReview(review)
     }
 
-    suspend fun getReviews(recipeId: String): Resource<List<Review>> =
-        firestoreService.getReviews(recipeId)
+    suspend fun getReviews(recipeId: String): Resource<List<Review>> {
+        if (recipeId.isBlank()) return Resource.Error("Invalid recipe ID.")
+        return firestoreService.getReviews(recipeId)
+    }
 
-    // ── Favorites ─────────────────────────────────────────────────────────────
+    suspend fun deleteReview(recipeId: String, reviewId: String): Resource<Unit> =
+        firestoreService.deleteReview(recipeId, reviewId)
 
-    suspend fun addFavorite(favorite: Favorite): Resource<Unit> =
-        firestoreService.addFavorite(favorite)
-
-    suspend fun removeFavorite(userId: String, recipeId: String): Resource<Unit> =
-        firestoreService.removeFavorite(userId, recipeId)
-
-    fun observeFavorites(userId: String): Flow<Resource<List<Favorite>>> =
-        firestoreService.observeFavorites(userId)
+    companion object {
+        @Volatile private var instance: RecipeRepository? = null
+        fun getInstance(): RecipeRepository =
+            instance ?: synchronized(this) {
+                instance ?: RecipeRepository().also { instance = it }
+            }
+    }
 }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// UserRepository.kt
-//
-// Manages user profile reads, updates, and profile image uploads.
+// BlogRepository
 // ─────────────────────────────────────────────────────────────────────────────
-@Singleton
-class UserRepository @Inject constructor(
-    private val firestoreService: FirestoreService,
-    private val storageService: StorageService,
-    private val authService: AuthService
+
+class BlogRepository(
+    private val firestoreService: FirestoreService = FirestoreService.getInstance()
 ) {
 
-    /**
-     * Fetches a user profile document from Firestore.
-     */
-    suspend fun getUser(uid: String): Resource<User> =
-        firestoreService.getUser(uid)
+    suspend fun addBlog(blog: Blog): Resource<String> {
+        if (blog.title.isBlank()) return Resource.Error("Blog title cannot be empty.")
+        if (blog.content.isBlank()) return Resource.Error("Blog content cannot be empty.")
+        if (blog.title.length > 100)
+            return Resource.Error("Blog title must be 100 characters or fewer.")
+        return firestoreService.addBlog(blog)
+    }
 
-    /**
-     * Real-time user profile stream. Ideal for Profile screen.
-     */
+    suspend fun getBlogs(limit: Long = Constants.PAGE_SIZE_BLOGS): Resource<List<Blog>> =
+        firestoreService.getBlogs(limit)
+
+    fun observeBlogs(limit: Long = Constants.PAGE_SIZE_BLOGS): Flow<Resource<List<Blog>>> =
+        firestoreService.observeBlogs(limit)
+
+    suspend fun getBlogById(blogId: String): Resource<Blog> {
+        if (blogId.isBlank()) return Resource.Error("Invalid blog ID.")
+        return firestoreService.getBlogById(blogId)
+    }
+
+    suspend fun deleteBlog(blogId: String): Resource<Unit> {
+        if (blogId.isBlank()) return Resource.Error("Invalid blog ID.")
+        return firestoreService.deleteBlog(blogId)
+    }
+
+    companion object {
+        @Volatile private var instance: BlogRepository? = null
+        fun getInstance(): BlogRepository =
+            instance ?: synchronized(this) {
+                instance ?: BlogRepository().also { instance = it }
+            }
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UserRepository
+// ─────────────────────────────────────────────────────────────────────────────
+
+class UserRepository(
+    private val firestoreService: FirestoreService = FirestoreService.getInstance(),
+    private val authService: AuthService = AuthService.getInstance()
+) {
+
+    fun getCurrentUserId(): String? = authService.currentUserId
+
+    suspend fun getUser(uid: String): Resource<User> {
+        if (uid.isBlank()) return Resource.Error("Invalid user ID.")
+        return firestoreService.getUser(uid)
+    }
+
     fun observeUser(uid: String): Flow<Resource<User>> =
         firestoreService.observeUser(uid)
 
-    /**
-     * Updates specific fields of the user's Firestore document.
-     * Accepts a map so callers can patch only what changed.
-     *
-     * Example:
-     *   updateUserFields(uid, mapOf("bio" to "I love cooking!"))
-     */
-    suspend fun updateUserFields(
-        uid: String,
-        fields: Map<String, Any?>
-    ): Resource<Unit> = firestoreService.updateUser(uid, fields)
-
-    /**
-     * Full profile update flow:
-     * 1. Upload new profile image (if provided)
-     * 2. Update Firestore document
-     * 3. Update Firebase Auth display name
-     */
-    suspend fun updateProfile(
-        uid: String,
-        displayName: String,
-        bio: String?,
-        imageUri: Uri? = null
-    ): Resource<Unit> {
-        val fields = mutableMapOf<String, Any?>(
-            "displayName" to displayName,
-            "bio" to bio
-        )
-
-        // Upload profile image if a new one was selected
-        if (imageUri != null) {
-            when (val upload = storageService.uploadProfileImage(uid, imageUri)) {
-                is Resource.Success -> fields["profileImageUrl"] = upload.data
-                is Resource.Error   -> return Resource.Error(upload.message)
-                else -> Unit
-            }
-        }
-
-        // Firestore update
-        val firestoreResult = firestoreService.updateUser(uid, fields)
-        if (firestoreResult is Resource.Error) return firestoreResult
-
-        // Sync Auth display name
-        authService.updateDisplayName(displayName)
-
-        return Resource.Success(Unit)
+    suspend fun updateUserFields(uid: String, fields: Map<String, Any?>): Resource<Unit> {
+        if (uid.isBlank()) return Resource.Error("Invalid user ID.")
+        if (fields.isEmpty()) return Resource.Error("No fields to update.")
+        return firestoreService.updateUser(uid, fields)
     }
 
-    /**
-     * Convenience helper — returns the current user's UID or null.
-     */
-    fun getCurrentUserId(): String? = authService.currentUserId
+    // ── Favorites ─────────────────────────────────────────────────────────────
+
+    suspend fun addFavorite(favorite: Favorite): Resource<Unit> {
+        if (favorite.userId.isBlank()) return Resource.Error("User not logged in.")
+        if (favorite.recipeId.isBlank()) return Resource.Error("Invalid recipe.")
+        return firestoreService.addFavorite(favorite)
+    }
+
+    suspend fun removeFavorite(userId: String, recipeId: String): Resource<Unit> {
+        if (userId.isBlank() || recipeId.isBlank()) return Resource.Error("Invalid IDs.")
+        return firestoreService.removeFavorite(userId, recipeId)
+    }
+
+    suspend fun getFavorites(userId: String): Resource<List<Favorite>> {
+        if (userId.isBlank()) return Resource.Error("Invalid user ID.")
+        return firestoreService.getFavorites(userId)
+    }
+
+    suspend fun isFavorited(userId: String, recipeId: String): Boolean =
+        firestoreService.isFavorited(userId, recipeId)
+
+    fun observeFavorites(userId: String): Flow<Resource<List<Favorite>>> =
+        firestoreService.observeFavorites(userId)
+
+    companion object {
+        @Volatile private var instance: UserRepository? = null
+        fun getInstance(): UserRepository =
+            instance ?: synchronized(this) {
+                instance ?: UserRepository().also { instance = it }
+            }
+    }
 }

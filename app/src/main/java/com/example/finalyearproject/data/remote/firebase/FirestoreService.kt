@@ -14,53 +14,40 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
- * FirestoreService
- *
- * Single source of truth for all Firestore read/write operations.
- * Returns [Resource] wrappers and exposes real-time listeners as [Flow].
- *
- * Location: data/remote/firebase/FirestoreService.kt
- *
- * Collection layout:
- *   users/{uid}
- *   recipes/{recipeId}
- *   recipes/{recipeId}/reviews/{reviewId}
- *   blogs/{blogId}
- *   users/{uid}/favorites/{favoriteId}
+ * FirestoreService — Day 2 Full Implementation
+ * All Firestore CRUD operations for every collection.
+ * No Hilt — instantiated directly via companion object factory.
  */
-@Singleton
-class FirestoreService @Inject constructor(
-    private val db: FirebaseFirestore
-) {
+class FirestoreService {
+
+    private val db = FirebaseFirestore.getInstance()
 
     // ── Collection references ─────────────────────────────────────────────────
-
     private val usersCol    get() = db.collection(Constants.COLLECTION_USERS)
     private val recipesCol  get() = db.collection(Constants.COLLECTION_RECIPES)
     private val blogsCol    get() = db.collection(Constants.COLLECTION_BLOGS)
 
+    companion object {
+        @Volatile private var instance: FirestoreService? = null
+        fun getInstance(): FirestoreService =
+            instance ?: synchronized(this) {
+                instance ?: FirestoreService().also { instance = it }
+            }
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
-    // USER OPERATIONS
+    // USER
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * Creates or overwrites a user document in Firestore.
-     * Called immediately after Firebase Auth registration.
-     */
     suspend fun addUser(user: User): Resource<Unit> = try {
         usersCol.document(user.uid).set(user.toMap()).await()
         Resource.Success(Unit)
     } catch (e: Exception) {
-        Resource.Error(e.localizedMessage ?: "Failed to create user profile.")
+        Resource.Error(e.localizedMessage ?: "Failed to create user.")
     }
 
-    /**
-     * Fetches a single user document by UID.
-     */
     suspend fun getUser(uid: String): Resource<User> = try {
         val snapshot = usersCol.document(uid).get().await()
         val user = snapshot.toObject(User::class.java)
@@ -70,29 +57,6 @@ class FirestoreService @Inject constructor(
         Resource.Error(e.localizedMessage ?: "Failed to fetch user.")
     }
 
-    /**
-     * Real-time listener for a user's profile document.
-     * Emits [Resource.Loading] on subscription, then [Resource.Success]/[Resource.Error]
-     * on every Firestore update.
-     */
-    fun observeUser(uid: String): Flow<Resource<User>> = callbackFlow {
-        trySend(Resource.Loading())
-        val listener = usersCol.document(uid)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(Resource.Error(error.localizedMessage ?: "Snapshot error"))
-                    return@addSnapshotListener
-                }
-                val user = snapshot?.toObject(User::class.java)
-                if (user != null) trySend(Resource.Success(user))
-                else trySend(Resource.Error("User document missing."))
-            }
-        awaitClose { listener.remove() }
-    }
-
-    /**
-     * Partially updates user fields (does not overwrite entire document).
-     */
     suspend fun updateUser(uid: String, fields: Map<String, Any?>): Resource<Unit> = try {
         usersCol.document(uid).update(fields).await()
         Resource.Success(Unit)
@@ -100,14 +64,25 @@ class FirestoreService @Inject constructor(
         Resource.Error(e.localizedMessage ?: "Failed to update user.")
     }
 
+    fun observeUser(uid: String): Flow<Resource<User>> = callbackFlow {
+        trySend(Resource.Loading())
+        val listener = usersCol.document(uid)
+            .addSnapshotListener { snap, err ->
+                if (err != null) {
+                    trySend(Resource.Error(err.localizedMessage ?: "Error"))
+                    return@addSnapshotListener
+                }
+                val user = snap?.toObject(User::class.java)
+                if (user != null) trySend(Resource.Success(user))
+                else trySend(Resource.Error("User not found."))
+            }
+        awaitClose { listener.remove() }
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
-    // RECIPE OPERATIONS
+    // RECIPES
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * Adds a new recipe document. Firestore auto-generates the document ID.
-     * @return [Resource.Success] with the new document ID.
-     */
     suspend fun addRecipe(recipe: Recipe): Resource<String> = try {
         val docRef = recipesCol.add(recipe.toMap()).await()
         Resource.Success(docRef.id)
@@ -115,48 +90,27 @@ class FirestoreService @Inject constructor(
         Resource.Error(e.localizedMessage ?: "Failed to add recipe.")
     }
 
-    /**
-     * Fetches paginated list of published recipes, ordered by creation date.
-     *
-     * @param limit  Page size (default 20)
-     */
-    suspend fun getRecipes(limit: Long = 20): Resource<List<Recipe>> = try {
+    suspend fun getRecipes(limit: Long = Constants.PAGE_SIZE_RECIPES): Resource<List<Recipe>> = try {
         val snapshot = recipesCol
             .whereEqualTo("isPublished", true)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .limit(limit)
             .get()
             .await()
-
-        val recipes = snapshot.toObjects(Recipe::class.java)
-        Resource.Success(recipes)
+        Resource.Success(snapshot.toObjects(Recipe::class.java))
     } catch (e: Exception) {
         Resource.Error(e.localizedMessage ?: "Failed to fetch recipes.")
     }
 
-    /**
-     * Real-time feed of recipes — emits on every change.
-     */
-    fun observeRecipes(limit: Long = 20): Flow<Resource<List<Recipe>>> = callbackFlow {
-        trySend(Resource.Loading())
-        val listener = recipesCol
-            .whereEqualTo("isPublished", true)
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(limit)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(Resource.Error(error.localizedMessage ?: "Snapshot error"))
-                    return@addSnapshotListener
-                }
-                val recipes = snapshot?.toObjects(Recipe::class.java) ?: emptyList()
-                trySend(Resource.Success(recipes))
-            }
-        awaitClose { listener.remove() }
+    suspend fun getRecipeById(recipeId: String): Resource<Recipe> = try {
+        val snapshot = recipesCol.document(recipeId).get().await()
+        val recipe = snapshot.toObject(Recipe::class.java)
+            ?: return Resource.Error("Recipe not found.")
+        Resource.Success(recipe)
+    } catch (e: Exception) {
+        Resource.Error(e.localizedMessage ?: "Failed to fetch recipe.")
     }
 
-    /**
-     * Fetches recipes for a specific author (My Recipes screen).
-     */
     suspend fun getRecipesByAuthor(authorId: String): Resource<List<Recipe>> = try {
         val snapshot = recipesCol
             .whereEqualTo("authorId", authorId)
@@ -168,21 +122,25 @@ class FirestoreService @Inject constructor(
         Resource.Error(e.localizedMessage ?: "Failed to fetch author's recipes.")
     }
 
-    /**
-     * Fetches a single recipe by ID.
-     */
-    suspend fun getRecipeById(recipeId: String): Resource<Recipe> = try {
-        val snapshot = recipesCol.document(recipeId).get().await()
-        val recipe = snapshot.toObject(Recipe::class.java)
-            ?: return Resource.Error("Recipe not found.")
-        Resource.Success(recipe)
+    suspend fun getRecipesByCategory(category: String): Resource<List<Recipe>> = try {
+        val snapshot = recipesCol
+            .whereEqualTo("category", category)
+            .whereEqualTo("isPublished", true)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .get()
+            .await()
+        Resource.Success(snapshot.toObjects(Recipe::class.java))
     } catch (e: Exception) {
-        Resource.Error(e.localizedMessage ?: "Failed to fetch recipe.")
+        Resource.Error(e.localizedMessage ?: "Failed to fetch recipes by category.")
     }
 
-    /**
-     * Deletes a recipe document.
-     */
+    suspend fun updateRecipe(recipeId: String, fields: Map<String, Any?>): Resource<Unit> = try {
+        recipesCol.document(recipeId).update(fields).await()
+        Resource.Success(Unit)
+    } catch (e: Exception) {
+        Resource.Error(e.localizedMessage ?: "Failed to update recipe.")
+    }
+
     suspend fun deleteRecipe(recipeId: String): Resource<Unit> = try {
         recipesCol.document(recipeId).delete().await()
         Resource.Success(Unit)
@@ -190,40 +148,104 @@ class FirestoreService @Inject constructor(
         Resource.Error(e.localizedMessage ?: "Failed to delete recipe.")
     }
 
+    // ── Real-time recipe feed ─────────────────────────────────────────────────
+
+    fun observeRecipes(limit: Long = Constants.PAGE_SIZE_RECIPES): Flow<Resource<List<Recipe>>> =
+        callbackFlow {
+            trySend(Resource.Loading())
+            val listener = recipesCol
+                .whereEqualTo("isPublished", true)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(limit)
+                .addSnapshotListener { snap, err ->
+                    if (err != null) {
+                        trySend(Resource.Error(err.localizedMessage ?: "Snapshot error"))
+                        return@addSnapshotListener
+                    }
+                    trySend(Resource.Success(snap?.toObjects(Recipe::class.java) ?: emptyList()))
+                }
+            awaitClose { listener.remove() }
+        }
+
     // ═══════════════════════════════════════════════════════════════════════════
-    // REVIEW OPERATIONS
+    // BLOGS
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * Adds a review to the recipe's sub-collection.
-     * Also atomically increments reviewCount and recalculates averageRating.
-     */
+    suspend fun addBlog(blog: Blog): Resource<String> = try {
+        val docRef = blogsCol.add(blog.toMap()).await()
+        Resource.Success(docRef.id)
+    } catch (e: Exception) {
+        Resource.Error(e.localizedMessage ?: "Failed to add blog.")
+    }
+
+    suspend fun getBlogs(limit: Long = Constants.PAGE_SIZE_BLOGS): Resource<List<Blog>> = try {
+        val snapshot = blogsCol
+            .whereEqualTo("isPublished", true)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .limit(limit)
+            .get()
+            .await()
+        Resource.Success(snapshot.toObjects(Blog::class.java))
+    } catch (e: Exception) {
+        Resource.Error(e.localizedMessage ?: "Failed to fetch blogs.")
+    }
+
+    suspend fun getBlogById(blogId: String): Resource<Blog> = try {
+        val snapshot = blogsCol.document(blogId).get().await()
+        val blog = snapshot.toObject(Blog::class.java)
+            ?: return Resource.Error("Blog not found.")
+        Resource.Success(blog)
+    } catch (e: Exception) {
+        Resource.Error(e.localizedMessage ?: "Failed to fetch blog.")
+    }
+
+    suspend fun deleteBlog(blogId: String): Resource<Unit> = try {
+        blogsCol.document(blogId).delete().await()
+        Resource.Success(Unit)
+    } catch (e: Exception) {
+        Resource.Error(e.localizedMessage ?: "Failed to delete blog.")
+    }
+
+    // ── Real-time blog feed ───────────────────────────────────────────────────
+
+    fun observeBlogs(limit: Long = Constants.PAGE_SIZE_BLOGS): Flow<Resource<List<Blog>>> =
+        callbackFlow {
+            trySend(Resource.Loading())
+            val listener = blogsCol
+                .whereEqualTo("isPublished", true)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(limit)
+                .addSnapshotListener { snap, err ->
+                    if (err != null) {
+                        trySend(Resource.Error(err.localizedMessage ?: "Snapshot error"))
+                        return@addSnapshotListener
+                    }
+                    trySend(Resource.Success(snap?.toObjects(Blog::class.java) ?: emptyList()))
+                }
+            awaitClose { listener.remove() }
+        }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // REVIEWS  — sub-collection: recipes/{recipeId}/reviews
+    // ═══════════════════════════════════════════════════════════════════════════
+
     suspend fun addReview(review: Review): Resource<String> = try {
-        // 1. Write the review document
         val reviewRef = recipesCol
             .document(review.recipeId)
             .collection(Constants.COLLECTION_REVIEWS)
             .add(review.toMap())
             .await()
 
-        // 2. Atomically update the recipe's aggregate counters
-        recipesCol.document(review.recipeId).update(
-            mapOf(
-                "reviewCount" to FieldValue.increment(1),
-                // averageRating re-computation is best done in a Cloud Function
-                // for production; client-side increment is a placeholder.
-                "averageRating" to review.rating.toDouble()
-            )
-        ).await()
+        // Atomically increment reviewCount on the parent recipe
+        recipesCol.document(review.recipeId)
+            .update("reviewCount", FieldValue.increment(1))
+            .await()
 
         Resource.Success(reviewRef.id)
     } catch (e: Exception) {
         Resource.Error(e.localizedMessage ?: "Failed to add review.")
     }
 
-    /**
-     * Fetches all reviews for a given recipe.
-     */
     suspend fun getReviews(recipeId: String): Resource<List<Review>> = try {
         val snapshot = recipesCol
             .document(recipeId)
@@ -236,29 +258,40 @@ class FirestoreService @Inject constructor(
         Resource.Error(e.localizedMessage ?: "Failed to fetch reviews.")
     }
 
+    suspend fun deleteReview(recipeId: String, reviewId: String): Resource<Unit> = try {
+        recipesCol
+            .document(recipeId)
+            .collection(Constants.COLLECTION_REVIEWS)
+            .document(reviewId)
+            .delete()
+            .await()
+
+        // Decrement reviewCount
+        recipesCol.document(recipeId)
+            .update("reviewCount", FieldValue.increment(-1))
+            .await()
+
+        Resource.Success(Unit)
+    } catch (e: Exception) {
+        Resource.Error(e.localizedMessage ?: "Failed to delete review.")
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
-    // FAVORITE OPERATIONS
+    // FAVORITES  — sub-collection: users/{uid}/favorites
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * Saves a recipe to the user's favorites sub-collection.
-     * Uses the recipeId as the document ID to allow idempotent upserts.
-     */
     suspend fun addFavorite(favorite: Favorite): Resource<Unit> = try {
         usersCol
             .document(favorite.userId)
             .collection(Constants.COLLECTION_FAVORITES)
-            .document(favorite.recipeId)       // deterministic doc ID
+            .document(favorite.recipeId)   // deterministic ID — prevents duplicates
             .set(favorite.toMap())
             .await()
         Resource.Success(Unit)
     } catch (e: Exception) {
-        Resource.Error(e.localizedMessage ?: "Failed to save favorite.")
+        Resource.Error(e.localizedMessage ?: "Failed to add favorite.")
     }
 
-    /**
-     * Removes a recipe from favorites.
-     */
     suspend fun removeFavorite(userId: String, recipeId: String): Resource<Unit> = try {
         usersCol
             .document(userId)
@@ -271,46 +304,47 @@ class FirestoreService @Inject constructor(
         Resource.Error(e.localizedMessage ?: "Failed to remove favorite.")
     }
 
+    suspend fun getFavorites(userId: String): Resource<List<Favorite>> = try {
+        val snapshot = usersCol
+            .document(userId)
+            .collection(Constants.COLLECTION_FAVORITES)
+            .orderBy("savedAt", Query.Direction.DESCENDING)
+            .get()
+            .await()
+        Resource.Success(snapshot.toObjects(Favorite::class.java))
+    } catch (e: Exception) {
+        Resource.Error(e.localizedMessage ?: "Failed to fetch favorites.")
+    }
+
     /**
-     * Fetches all favorites for a user — real-time [Flow].
+     * Checks if a specific recipe is already in the user's favorites.
+     * Used for duplicate prevention in ToggleFavoriteUseCase.
      */
+    suspend fun isFavorited(userId: String, recipeId: String): Boolean = try {
+        val snapshot = usersCol
+            .document(userId)
+            .collection(Constants.COLLECTION_FAVORITES)
+            .document(recipeId)
+            .get()
+            .await()
+        snapshot.exists()
+    } catch (e: Exception) {
+        false
+    }
+
     fun observeFavorites(userId: String): Flow<Resource<List<Favorite>>> = callbackFlow {
         trySend(Resource.Loading())
         val listener = usersCol
             .document(userId)
             .collection(Constants.COLLECTION_FAVORITES)
             .orderBy("savedAt", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(Resource.Error(error.localizedMessage ?: "Snapshot error"))
+            .addSnapshotListener { snap, err ->
+                if (err != null) {
+                    trySend(Resource.Error(err.localizedMessage ?: "Snapshot error"))
                     return@addSnapshotListener
                 }
-                val favs = snapshot?.toObjects(Favorite::class.java) ?: emptyList()
-                trySend(Resource.Success(favs))
+                trySend(Resource.Success(snap?.toObjects(Favorite::class.java) ?: emptyList()))
             }
         awaitClose { listener.remove() }
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // BLOG OPERATIONS
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    suspend fun addBlog(blog: Blog): Resource<String> = try {
-        val docRef = blogsCol.add(blog.toMap()).await()
-        Resource.Success(docRef.id)
-    } catch (e: Exception) {
-        Resource.Error(e.localizedMessage ?: "Failed to add blog post.")
-    }
-
-    suspend fun getBlogs(limit: Long = 20): Resource<List<Blog>> = try {
-        val snapshot = blogsCol
-            .whereEqualTo("isPublished", true)
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(limit)
-            .get()
-            .await()
-        Resource.Success(snapshot.toObjects(Blog::class.java))
-    } catch (e: Exception) {
-        Resource.Error(e.localizedMessage ?: "Failed to fetch blogs.")
     }
 }

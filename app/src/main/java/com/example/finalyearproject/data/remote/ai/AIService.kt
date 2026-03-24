@@ -15,145 +15,165 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 /**
- * AIService
+ * AIService — Day 2
+ * Gemini API via OkHttp. No Hilt — singleton pattern.
  *
- * OkHttp-based client for communicating with the AI backend API.
- * All network calls are dispatched on [Dispatchers.IO] and wrapped in
- * [Resource] to avoid leaking HTTP exceptions into the ViewModel.
- *
- * Location: data/remote/ai/AIService.kt
- *
- * Usage example:
- *   val response = aiService.sendFoodQuery("What should I eat today?")
- *   // response is Resource<AIResponse>
+ * Three public functions:
+ *   suggestMeal()      → What should I eat based on a prompt?
+ *   generateRecipe()   → Full recipe from a list of ingredients
+ *   analyzeNutrition() → Nutritional breakdown of a food/recipe
  */
+class AIService {
 
-class AIService constructor() {
-
-    // ── OkHttp client ─────────────────────────────────────────────────────────
+    // ── OkHttp Client ─────────────────────────────────────────────────────────
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY   // Use NONE in release builds
+        level = HttpLoggingInterceptor.Level.BODY
     }
 
     private val client: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)          // AI APIs can be slow
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(Constants.NETWORK_CONNECT_TIMEOUT, TimeUnit.SECONDS)
+        .readTimeout(Constants.NETWORK_READ_TIMEOUT, TimeUnit.SECONDS)
+        .writeTimeout(Constants.NETWORK_WRITE_TIMEOUT, TimeUnit.SECONDS)
         .addInterceptor(loggingInterceptor)
-        .addInterceptor { chain ->
-            // Attach API key to every request
-            val original = chain.request()
-            val withAuth = original.newBuilder()
-                .header("Authorization", "Bearer ${Constants.AI_API_KEY}")
-                .header("Content-Type", "application/json")
-                .build()
-            chain.proceed(withAuth)
-        }
         .build()
 
     private val gson = Gson()
-    private val JSON = "application/json; charset=utf-8".toMediaType()
+    private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
 
-    // ── Request / Response models ─────────────────────────────────────────────
-
-    /**
-     * Payload sent to the AI endpoint.
-     */
-    data class AIRequest(
-        val prompt: String,
-        val context: String? = null,         // optional additional context
-        val maxTokens: Int = 512,
-        val temperature: Double = 0.7
-    )
-
-    /**
-     * Parsed AI response payload.
-     * Adjust fields to match your chosen AI provider's schema
-     * (e.g. OpenAI, Gemini, Groq, Mistral, etc.).
-     */
-    data class AIResponse(
-        val id: String?,
-        val response: String,                // the main text answer
-        val tokensUsed: Int?,
-        val rawJson: String                  // always store raw JSON for debugging
-    )
-
-    // ── Public API ────────────────────────────────────────────────────────────
-
-    /**
-     * Sends a natural-language food query to the AI backend.
-     *
-     * Example: "What should I eat today given I have chicken and rice?"
-     *
-     * @param query    User's question
-     * @param context  Optional food context (e.g. available ingredients, dietary prefs)
-     * @return [Resource.Success] with [AIResponse], or [Resource.Error].
-     */
-    suspend fun sendFoodQuery(
-        query: String,
-        context: String? = null
-    ): Resource<AIResponse> = withContext(Dispatchers.IO) {
-        sendRequest(
-            AIRequest(
-                prompt = query,
-                context = context
-            )
-        )
+    companion object {
+        @Volatile private var instance: AIService? = null
+        fun getInstance(): AIService =
+            instance ?: synchronized(this) {
+                instance ?: AIService().also { instance = it }
+            }
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PUBLIC API
+    // ═══════════════════════════════════════════════════════════════════════════
+
     /**
-     * Asks the AI to generate a recipe based on given ingredients.
+     * Suggests a meal based on a free-text prompt.
+     *
+     * Example prompt:
+     *   "I'm feeling tired and want something warm and filling.
+     *    I have chicken, rice, and carrots in my fridge."
+     *
+     * @return Resource.Success with a meal suggestion string.
      */
-    suspend fun generateRecipe(ingredients: List<String>): Resource<AIResponse> =
+    suspend fun suggestMeal(prompt: String): Resource<String> =
         withContext(Dispatchers.IO) {
-            val prompt = buildString {
-                append("Generate a detailed recipe using these ingredients: ")
-                append(ingredients.joinToString(", "))
-                append(". Include title, description, step-by-step instructions, and estimated cooking time.")
-            }
-            sendRequest(AIRequest(prompt = prompt, maxTokens = 1024))
+            if (prompt.isBlank()) return@withContext Resource.Error("Prompt cannot be empty.")
+
+            val systemInstruction =
+                "You are a professional chef and nutritionist. " +
+                        "Suggest a specific meal based on the user's request. " +
+                        "Keep your answer concise — meal name, brief description, and why it fits."
+
+            sendRequest(systemInstruction, prompt)
         }
 
     /**
-     * Asks the AI to analyse the nutritional profile of a recipe.
+     * Generates a complete recipe from a list of ingredients.
+     *
+     * Example ingredients:
+     *   "chicken breast, garlic, olive oil, lemon, rosemary"
+     *
+     * @return Resource.Success with a full recipe as a formatted string.
      */
-    suspend fun analyseNutrition(recipeDescription: String): Resource<AIResponse> =
+    suspend fun generateRecipe(ingredients: String): Resource<String> =
         withContext(Dispatchers.IO) {
-            val prompt = "Analyse the nutritional content of this recipe and provide " +
-                    "estimated calories, protein, carbs, and fat: $recipeDescription"
-            sendRequest(AIRequest(prompt = prompt))
+            if (ingredients.isBlank())
+                return@withContext Resource.Error("Ingredients cannot be empty.")
+
+            val systemInstruction =
+                "You are a professional chef. Generate a complete recipe using ONLY " +
+                        "the provided ingredients (plus basic pantry staples like salt, pepper, oil). " +
+                        "Format your response as:\n" +
+                        "**Recipe Name**\n" +
+                        "Description: ...\n" +
+                        "Prep Time: ... | Cook Time: ... | Servings: ...\n" +
+                        "**Ingredients:**\n- item\n" +
+                        "**Instructions:**\n1. step"
+
+            val userPrompt = "Ingredients I have: $ingredients"
+            sendRequest(systemInstruction, userPrompt)
         }
 
-    // ── Core POST helper ──────────────────────────────────────────────────────
+    /**
+     * Analyses the nutritional content of a food or recipe description.
+     *
+     * Example food:
+     *   "A bowl of chicken fried rice with 2 eggs, 1 cup rice, and vegetables."
+     *
+     * @return Resource.Success with a nutritional breakdown string.
+     */
+    suspend fun analyzeNutrition(food: String): Resource<String> =
+        withContext(Dispatchers.IO) {
+            if (food.isBlank())
+                return@withContext Resource.Error("Food description cannot be empty.")
+
+            val systemInstruction =
+                "You are a certified nutritionist. Analyze the nutritional content " +
+                        "of the provided food or recipe. Format your response as:\n" +
+                        "**Nutritional Analysis**\n" +
+                        "Serving size: ...\n" +
+                        "Calories: ...\n" +
+                        "Protein: ...g\n" +
+                        "Carbohydrates: ...g\n" +
+                        "Fat: ...g\n" +
+                        "Fiber: ...g\n" +
+                        "Key vitamins/minerals: ...\n" +
+                        "Health notes: ..."
+
+            sendRequest(systemInstruction, food)
+        }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CORE REQUEST HANDLER
+    // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Builds and executes the HTTP POST request.
-     * Returns the raw JSON body on success, mapped to [AIResponse].
+     * Builds and executes the POST request to Gemini API.
+     * Returns the text content from the response.
      */
-    private fun sendRequest(aiRequest: AIRequest): Resource<AIResponse> {
+    private fun sendRequest(
+        systemInstruction: String,
+        userPrompt: String,
+        maxTokens: Int = 1024,
+        temperature: Double = 0.7
+    ): Resource<String> {
         return try {
-            val requestBody = buildRequestBody(aiRequest)
+            val requestBody = buildRequestBody(
+                systemInstruction = systemInstruction,
+                userPrompt = userPrompt,
+                maxTokens = maxTokens,
+                temperature = temperature
+            )
+
+            val url = "${Constants.AI_BASE_URL}${Constants.AI_ENDPOINT_QUERY}" +
+                    "?key=${Constants.AI_API_KEY}"
 
             val httpRequest = Request.Builder()
-                .url(Constants.AI_BASE_URL + Constants.AI_ENDPOINT_QUERY)
-                .post(requestBody.toRequestBody(JSON))
+                .url(url)
+                .post(requestBody.toRequestBody(JSON_MEDIA))
+                .addHeader("Content-Type", "application/json")
                 .build()
 
             val httpResponse = client.newCall(httpRequest).execute()
 
-            // ── Response handling ──────────────────────────────────────────
             val rawJson = httpResponse.body?.string()
-                ?: return Resource.Error("Empty response from AI server.")
+                ?: return Resource.Error("Empty response from Gemini.")
 
             if (!httpResponse.isSuccessful) {
                 return Resource.Error(
-                    "AI API error ${httpResponse.code}: ${parseErrorMessage(rawJson)}"
+                    "Gemini API error ${httpResponse.code}: ${parseErrorMessage(rawJson)}"
                 )
             }
 
-            val aiResponse = parseResponse(rawJson)
-            Resource.Success(aiResponse)
+            val content = parseResponseText(rawJson)
+            Resource.Success(content)
 
         } catch (e: IOException) {
             Resource.Error("Network error: ${e.localizedMessage}")
@@ -162,78 +182,65 @@ class AIService constructor() {
         }
     }
 
-    // ── JSON builders ─────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+    // JSON HELPERS
+    // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Builds the JSON request body string.
+     * Builds Gemini-compatible JSON request body.
      *
-     * Adjust the JSON schema to match your AI provider.
-     * This template follows OpenAI-compatible APIs (Groq, Together.ai, etc.).
+     * Gemini format:
+     * {
+     *   "system_instruction": { "parts": [{ "text": "..." }] },
+     *   "contents": [{ "parts": [{ "text": "..." }] }],
+     *   "generationConfig": { "maxOutputTokens": 1024, "temperature": 0.7 }
+     * }
      */
-    private fun buildRequestBody(request: AIRequest): String {
-        val messages = buildList {
-            add(
-                mapOf(
-                    "role" to "system",
-                    "content" to "You are a professional chef and nutritionist. " +
-                            "Provide helpful, accurate, and engaging food-related advice."
-                )
-            )
-            request.context?.let {
-                add(mapOf("role" to "user", "content" to "Context: $it"))
-            }
-            add(mapOf("role" to "user", "content" to request.prompt))
-        }
-
+    private fun buildRequestBody(
+        systemInstruction: String,
+        userPrompt: String,
+        maxTokens: Int,
+        temperature: Double
+    ): String {
         val payload = mapOf(
-            "model" to Constants.AI_MODEL,
-            "messages" to messages,
-            "max_tokens" to request.maxTokens,
-            "temperature" to request.temperature
+            "system_instruction" to mapOf(
+                "parts" to listOf(mapOf("text" to systemInstruction))
+            ),
+            "contents" to listOf(
+                mapOf(
+                    "parts" to listOf(mapOf("text" to userPrompt))
+                )
+            ),
+            "generationConfig" to mapOf(
+                "maxOutputTokens" to maxTokens,
+                "temperature" to temperature
+            )
         )
         return gson.toJson(payload)
     }
 
     /**
-     * Parses the raw JSON response into [AIResponse].
-     * Handles OpenAI-compatible response format.
+     * Parses the text from Gemini's response.
+     * Response path: candidates[0].content.parts[0].text
      */
-    private fun parseResponse(rawJson: String): AIResponse {
+    private fun parseResponseText(rawJson: String): String {
         return try {
             val jsonObj = gson.fromJson(rawJson, JsonObject::class.java)
-
-            // OpenAI-compatible: choices[0].message.content
-            val content = jsonObj
-                .getAsJsonArray("choices")
+            jsonObj
+                .getAsJsonArray("candidates")
                 ?.get(0)?.asJsonObject
-                ?.getAsJsonObject("message")
-                ?.get("content")?.asString
-                ?: jsonObj.get("response")?.asString   // fallback for custom APIs
-                ?: rawJson
-
-            val id = jsonObj.get("id")?.asString
-            val tokens = jsonObj.getAsJsonObject("usage")
-                ?.get("total_tokens")?.asInt
-
-            AIResponse(
-                id = id,
-                response = content,
-                tokensUsed = tokens,
-                rawJson = rawJson
-            )
+                ?.getAsJsonObject("content")
+                ?.getAsJsonArray("parts")
+                ?.get(0)?.asJsonObject
+                ?.get("text")?.asString
+                ?: "No response received."
         } catch (e: Exception) {
-            // If parsing fails, return the raw string as the response
-            AIResponse(
-                id = null,
-                response = rawJson,
-                tokensUsed = null,
-                rawJson = rawJson
-            )
+            "Could not parse AI response."
         }
     }
 
     /**
-     * Attempts to extract an error message from a non-2xx response body.
+     * Extracts error message from Gemini error response body.
      */
     private fun parseErrorMessage(rawJson: String): String = try {
         val jsonObj = gson.fromJson(rawJson, JsonObject::class.java)
