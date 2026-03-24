@@ -1,3 +1,32 @@
 <resources>
     <string name="app_name">FinalYearProject</string>
+    <!-- AUTH -->
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+
+    <!-- HOME -->
+    <string name="home">Home</string>
+    <string name="view_detail">View Detail</string>
+    <string name="favorite">Add to Favorite</string>
+
+    <!-- RECIPE -->
+    <string name="recipe_detail">Recipe Detail</string>
+    <string name="buy">Buy Cookbook</string>
+
+    <!-- AI -->
+    <string name="ask_ai">Ask AI about cooking…</string>
+    <string name="send">Send</string>
+
+    <!-- PAYMENT -->
+    <string name="payment">Payment</string>
+    <string name="pay_now">Pay Now</string>
+    <string name="payment_success">Payment Successful</string>
+
+    <!-- PROFILE -->
+    <string name="profile">Profile</string>
+    <string name="language">Language</string>
+    <string name="english">English</string>
+    <string name="vietnamese">Vietnamese</string>
 </resources>

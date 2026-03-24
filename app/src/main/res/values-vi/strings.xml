@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- AUTH -->
+    <string name="login">Đăng nhập</string>
+    <string name="register">Đăng ký</string>
+    <string name="email">Email</string>
+    <string name="password">Mật khẩu</string>
+
+    <!-- HOME -->
+    <string name="home">Trang chủ</string>
+    <string name="view_detail">Xem chi tiết</string>
+    <string name="favorite">Yêu thích</string>
+
+    <!-- RECIPE -->
+    <string name="recipe_detail">Chi tiết công thức</string>
+    <string name="buy">Mua sách nấu ăn</string>
+
+    <!-- AI -->
+    <string name="ask_ai">Hỏi AI về nấu ăn…</string>
+    <string name="send">Gửi</string>
+
+    <!-- PAYMENT -->
+    <string name="payment">Thanh toán</string>
+    <string name="pay_now">Thanh toán ngay</string>
+    <string name="payment_success">Thanh toán thành công</string>
+
+    <!-- PROFILE -->
+    <string name="profile">Cá nhân</string>
+    <string name="language">Ngôn ngữ</string>
+    <string name="english">Tiếng Anh</string>
+    <string name="vietnamese">Tiếng Việt</string>
+
+</resources>
