@@ -2,25 +2,28 @@ package com.example.finalyearproject.data.repository
 
 import com.example.finalyearproject.data.model.Blog
 import com.example.finalyearproject.data.model.Favorite
+import com.example.finalyearproject.data.model.PaginatedResult
 import com.example.finalyearproject.data.model.Recipe
+import com.example.finalyearproject.data.model.RecipeFilter
 import com.example.finalyearproject.data.model.Review
 import com.example.finalyearproject.data.model.User
 import com.example.finalyearproject.data.remote.firebase.AuthService
 import com.example.finalyearproject.data.remote.firebase.FirestoreService
 import com.example.finalyearproject.utils.Constants
 import com.example.finalyearproject.utils.Resource
+import com.example.finalyearproject.utils.safeCall
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.flow.Flow
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AuthRepository
 // ─────────────────────────────────────────────────────────────────────────────
 
-class AuthRepository(
+class AuthRepository private constructor(
     private val authService: AuthService = AuthService.getInstance(),
     private val firestoreService: FirestoreService = FirestoreService.getInstance()
 ) {
-
     val currentUser: FirebaseUser? get() = authService.currentUser
     val currentUserId: String?    get() = authService.currentUserId
     val isLoggedIn: Boolean       get() = authService.isLoggedIn
@@ -29,36 +32,31 @@ class AuthRepository(
         email: String,
         password: String,
         displayName: String
-    ): Resource<Unit> {
+    ): Resource<Unit> = safeCall {
         val authResult = authService.register(email, password)
-        if (authResult is Resource.Error) return Resource.Error(authResult.message)
+        if (authResult is Resource.Error) return@safeCall Resource.Error(authResult.message)
 
         val uid = authService.currentUserId
-            ?: return Resource.Error("Failed to retrieve user ID.")
+            ?: return@safeCall Resource.Error("UID missing after registration.")
 
-        val user = User(uid = uid, email = email, displayName = displayName)
-        firestoreService.addUser(user)
-
-        return Resource.Success(Unit)
+        firestoreService.addUser(User(uid = uid, email = email, displayName = displayName))
+        Resource.Success(Unit)
     }
 
-    suspend fun login(email: String, password: String): Resource<FirebaseUser> {
-        val result = authService.login(email, password)
-        return when (result) {
-            is Resource.Success -> {
-                val user = result.data.user
-                    ?: return Resource.Error("Login succeeded but no user returned.")
-                Resource.Success(user)
-            }
+    suspend fun login(email: String, password: String): Resource<FirebaseUser> = safeCall {
+        when (val result = authService.login(email, password)) {
+            is Resource.Success -> Resource.Success(
+                result.data.user ?: return@safeCall Resource.Error("No user returned.")
+            )
             is Resource.Error   -> Resource.Error(result.message)
-            is Resource.Loading -> Resource.Loading()
+            else                -> Resource.Loading()
         }
     }
 
     fun logout() = authService.logout()
 
     suspend fun sendPasswordReset(email: String): Resource<Unit> =
-        authService.sendPasswordResetEmail(email)
+        safeCall { authService.sendPasswordResetEmail(email) }
 
     companion object {
         @Volatile private var instance: AuthRepository? = null
@@ -71,93 +69,154 @@ class AuthRepository(
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RecipeRepository
+// RecipeRepository  — search + filter + pagination + recommendations
 // ─────────────────────────────────────────────────────────────────────────────
 
-class RecipeRepository(
+class RecipeRepository private constructor(
     private val firestoreService: FirestoreService = FirestoreService.getInstance()
 ) {
 
-    // ── Add ───────────────────────────────────────────────────────────────────
+    // ── CRUD ──────────────────────────────────────────────────────────────────
 
-    /**
-     * Validates before writing to Firestore.
-     * Business rule: title, at least 1 ingredient, at least 1 instruction step.
-     */
-    suspend fun addRecipe(recipe: Recipe): Resource<String> {
-        // Validation
-        if (recipe.title.isBlank())
-            return Resource.Error("Recipe title cannot be empty.")
-        if (recipe.title.length > Constants.MAX_RECIPE_TITLE_LENGTH)
-            return Resource.Error("Title must be ${Constants.MAX_RECIPE_TITLE_LENGTH} characters or fewer.")
-        if (recipe.ingredients.isEmpty())
-            return Resource.Error("Add at least one ingredient.")
-        if (recipe.instructions.isEmpty())
-            return Resource.Error("Add at least one instruction step.")
-        if (recipe.ingredients.size > Constants.MAX_INGREDIENTS)
-            return Resource.Error("Maximum ${Constants.MAX_INGREDIENTS} ingredients allowed.")
-
-        return firestoreService.addRecipe(recipe)
+    suspend fun addRecipe(recipe: Recipe): Resource<String> = safeCall {
+        validateRecipe(recipe)?.let { return@safeCall Resource.Error(it) }
+        firestoreService.addRecipe(recipe)
     }
 
-    // ── Read ──────────────────────────────────────────────────────────────────
-
     suspend fun getRecipes(limit: Long = Constants.PAGE_SIZE_RECIPES): Resource<List<Recipe>> =
-        firestoreService.getRecipes(limit)
+        safeCall { firestoreService.getRecipes(limit) }
 
     fun observeRecipes(limit: Long = Constants.PAGE_SIZE_RECIPES): Flow<Resource<List<Recipe>>> =
         firestoreService.observeRecipes(limit)
 
-    suspend fun getRecipeById(recipeId: String): Resource<Recipe> {
-        if (recipeId.isBlank()) return Resource.Error("Invalid recipe ID.")
-        return firestoreService.getRecipeById(recipeId)
+    suspend fun getRecipeById(recipeId: String): Resource<Recipe> = safeCall {
+        if (recipeId.isBlank()) return@safeCall Resource.Error("Invalid recipe ID.")
+        firestoreService.getRecipeById(recipeId)
     }
 
-    suspend fun getRecipesByAuthor(authorId: String): Resource<List<Recipe>> {
-        if (authorId.isBlank()) return Resource.Error("Invalid author ID.")
-        return firestoreService.getRecipesByAuthor(authorId)
+    suspend fun getRecipesByAuthor(authorId: String): Resource<List<Recipe>> = safeCall {
+        if (authorId.isBlank()) return@safeCall Resource.Error("Invalid author ID.")
+        firestoreService.getRecipesByAuthor(authorId)
     }
 
-    suspend fun getRecipesByCategory(category: String): Resource<List<Recipe>> {
-        if (category.isBlank()) return Resource.Error("Category cannot be empty.")
-        return firestoreService.getRecipesByCategory(category)
+    suspend fun updateRecipe(recipeId: String, fields: Map<String, Any?>): Resource<Unit> = safeCall {
+        if (recipeId.isBlank()) return@safeCall Resource.Error("Invalid recipe ID.")
+        firestoreService.updateRecipe(recipeId, fields)
     }
 
-    // ── Update ────────────────────────────────────────────────────────────────
-
-    suspend fun updateRecipe(recipeId: String, fields: Map<String, Any?>): Resource<Unit> {
-        if (recipeId.isBlank()) return Resource.Error("Invalid recipe ID.")
-        return firestoreService.updateRecipe(recipeId, fields)
+    suspend fun deleteRecipe(recipeId: String): Resource<Unit> = safeCall {
+        if (recipeId.isBlank()) return@safeCall Resource.Error("Invalid recipe ID.")
+        firestoreService.deleteRecipe(recipeId)
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────────
-
-    suspend fun deleteRecipe(recipeId: String): Resource<Unit> {
-        if (recipeId.isBlank()) return Resource.Error("Invalid recipe ID.")
-        return firestoreService.deleteRecipe(recipeId)
-    }
-
-    // ── Reviews ───────────────────────────────────────────────────────────────
+    // ── SEARCH ────────────────────────────────────────────────────────────────
 
     /**
-     * Validates rating range (1–5) before writing.
+     * Case-insensitive prefix search on recipe titles.
+     * Minimum 2 characters required to avoid overly broad results.
      */
-    suspend fun addReview(review: Review): Resource<String> {
-        if (review.recipeId.isBlank()) return Resource.Error("Invalid recipe ID.")
-        if (review.comment.isBlank()) return Resource.Error("Review comment cannot be empty.")
+    suspend fun searchRecipes(query: String): Resource<List<Recipe>> = safeCall {
+        if (query.trim().length < 2)
+            return@safeCall Resource.Error("Search term must be at least 2 characters.")
+        firestoreService.searchRecipesByTitle(query.trim())
+    }
+
+    // ── FILTER ────────────────────────────────────────────────────────────────
+
+    suspend fun filterRecipes(filter: RecipeFilter): Resource<List<Recipe>> = safeCall {
+        firestoreService.filterRecipes(filter)
+    }
+
+    suspend fun filterRecipesByRating(minRating: Double): Resource<List<Recipe>> = safeCall {
+        if (minRating < 1.0 || minRating > 5.0)
+            return@safeCall Resource.Error("Rating must be between 1 and 5.")
+        firestoreService.filterRecipesByRating(minRating)
+    }
+
+    suspend fun filterByCategory(category: String): Resource<List<Recipe>> = safeCall {
+        if (category.isBlank()) return@safeCall Resource.Error("Category cannot be empty.")
+        firestoreService.filterByCategory(category)
+    }
+
+    // ── PAGINATION ────────────────────────────────────────────────────────────
+
+    /**
+     * Load the first page. Call this when the screen first opens.
+     */
+    suspend fun loadFirstPage(
+        pageSize: Long = Constants.PAGINATION_PAGE_SIZE
+    ): Resource<PaginatedResult<Recipe>> = safeCall {
+        firestoreService.loadRecipesFirstPage(pageSize)
+    }
+
+    /**
+     * Load the next page. Pass [lastVisible] from the previous result.
+     */
+    suspend fun loadNextPage(
+        lastVisible: DocumentSnapshot,
+        pageSize: Long = Constants.PAGINATION_PAGE_SIZE
+    ): Resource<PaginatedResult<Recipe>> = safeCall {
+        firestoreService.loadNextRecipesPage(lastVisible, pageSize)
+    }
+
+    /**
+     * Paginated search — for the search results screen.
+     */
+    suspend fun searchPaginated(
+        query: String,
+        lastVisible: DocumentSnapshot? = null
+    ): Resource<PaginatedResult<Recipe>> = safeCall {
+        if (query.trim().length < 2)
+            return@safeCall Resource.Error("Search term must be at least 2 characters.")
+        firestoreService.searchRecipesPaginated(query, lastVisible)
+    }
+
+    // ── RECOMMENDATIONS ───────────────────────────────────────────────────────
+
+    suspend fun getRecommendedRecipes(userId: String): Resource<List<Recipe>> = safeCall {
+        if (userId.isBlank()) return@safeCall Resource.Error("Invalid user ID.")
+        firestoreService.getRecommendedRecipes(userId)
+    }
+
+    suspend fun getTrendingRecipes(limit: Long = 10): Resource<List<Recipe>> = safeCall {
+        firestoreService.getTrendingRecipes(limit)
+    }
+
+    // ── REVIEWS ───────────────────────────────────────────────────────────────
+
+    suspend fun addReview(review: Review): Resource<String> = safeCall {
+        if (review.comment.isBlank()) return@safeCall Resource.Error("Comment cannot be empty.")
         if (review.rating < Constants.MIN_RATING || review.rating > Constants.MAX_RATING)
-            return Resource.Error("Rating must be between 1 and 5.")
-
-        return firestoreService.addReview(review)
+            return@safeCall Resource.Error("Rating must be between 1 and 5.")
+        firestoreService.addReview(review)
     }
 
-    suspend fun getReviews(recipeId: String): Resource<List<Review>> {
-        if (recipeId.isBlank()) return Resource.Error("Invalid recipe ID.")
-        return firestoreService.getReviews(recipeId)
+    suspend fun getReviews(recipeId: String): Resource<List<Review>> = safeCall {
+        if (recipeId.isBlank()) return@safeCall Resource.Error("Invalid recipe ID.")
+        firestoreService.getReviews(recipeId)
     }
 
-    suspend fun deleteReview(recipeId: String, reviewId: String): Resource<Unit> =
+    suspend fun deleteReview(recipeId: String, reviewId: String): Resource<Unit> = safeCall {
         firestoreService.deleteReview(recipeId, reviewId)
+    }
+
+    // ── PRIVATE VALIDATION ────────────────────────────────────────────────────
+
+    /**
+     * Returns an error message string if invalid, null if valid.
+     */
+    private fun validateRecipe(recipe: Recipe): String? = when {
+        recipe.title.isBlank()              -> "Recipe title cannot be empty."
+        recipe.title.length > Constants.MAX_RECIPE_TITLE_LENGTH ->
+            "Title must be ${Constants.MAX_RECIPE_TITLE_LENGTH} characters or fewer."
+        recipe.ingredients.isEmpty()        -> "Add at least one ingredient."
+        recipe.instructions.isEmpty()       -> "Add at least one instruction step."
+        recipe.ingredients.size > Constants.MAX_INGREDIENTS ->
+            "Maximum ${Constants.MAX_INGREDIENTS} ingredients allowed."
+        recipe.prepTimeMinutes < 0          -> "Prep time cannot be negative."
+        recipe.servings < 1                 -> "Servings must be at least 1."
+        else -> null
+    }
 
     companion object {
         @Volatile private var instance: RecipeRepository? = null
@@ -173,32 +232,29 @@ class RecipeRepository(
 // BlogRepository
 // ─────────────────────────────────────────────────────────────────────────────
 
-class BlogRepository(
+class BlogRepository private constructor(
     private val firestoreService: FirestoreService = FirestoreService.getInstance()
 ) {
-
-    suspend fun addBlog(blog: Blog): Resource<String> {
-        if (blog.title.isBlank()) return Resource.Error("Blog title cannot be empty.")
-        if (blog.content.isBlank()) return Resource.Error("Blog content cannot be empty.")
-        if (blog.title.length > 100)
-            return Resource.Error("Blog title must be 100 characters or fewer.")
-        return firestoreService.addBlog(blog)
+    suspend fun addBlog(blog: Blog): Resource<String> = safeCall {
+        if (blog.title.isBlank()) return@safeCall Resource.Error("Blog title cannot be empty.")
+        if (blog.content.isBlank()) return@safeCall Resource.Error("Blog content cannot be empty.")
+        firestoreService.addBlog(blog)
     }
 
     suspend fun getBlogs(limit: Long = Constants.PAGE_SIZE_BLOGS): Resource<List<Blog>> =
-        firestoreService.getBlogs(limit)
+        safeCall { firestoreService.getBlogs(limit) }
 
     fun observeBlogs(limit: Long = Constants.PAGE_SIZE_BLOGS): Flow<Resource<List<Blog>>> =
         firestoreService.observeBlogs(limit)
 
-    suspend fun getBlogById(blogId: String): Resource<Blog> {
-        if (blogId.isBlank()) return Resource.Error("Invalid blog ID.")
-        return firestoreService.getBlogById(blogId)
+    suspend fun getBlogById(blogId: String): Resource<Blog> = safeCall {
+        if (blogId.isBlank()) return@safeCall Resource.Error("Invalid blog ID.")
+        firestoreService.getBlogById(blogId)
     }
 
-    suspend fun deleteBlog(blogId: String): Resource<Unit> {
-        if (blogId.isBlank()) return Resource.Error("Invalid blog ID.")
-        return firestoreService.deleteBlog(blogId)
+    suspend fun deleteBlog(blogId: String): Resource<Unit> = safeCall {
+        if (blogId.isBlank()) return@safeCall Resource.Error("Invalid blog ID.")
+        firestoreService.deleteBlog(blogId)
     }
 
     companion object {
@@ -212,46 +268,75 @@ class BlogRepository(
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// UserRepository
+// UserRepository  — full profile system
 // ─────────────────────────────────────────────────────────────────────────────
 
-class UserRepository(
+class UserRepository private constructor(
     private val firestoreService: FirestoreService = FirestoreService.getInstance(),
     private val authService: AuthService = AuthService.getInstance()
 ) {
-
     fun getCurrentUserId(): String? = authService.currentUserId
 
-    suspend fun getUser(uid: String): Resource<User> {
-        if (uid.isBlank()) return Resource.Error("Invalid user ID.")
-        return firestoreService.getUser(uid)
+    // ── Profile ───────────────────────────────────────────────────────────────
+
+    suspend fun getUserProfile(userId: String): Resource<User> = safeCall {
+        if (userId.isBlank()) return@safeCall Resource.Error("Invalid user ID.")
+        firestoreService.getUser(userId)
     }
 
-    fun observeUser(uid: String): Flow<Resource<User>> =
-        firestoreService.observeUser(uid)
+    fun observeUserProfile(userId: String): Flow<Resource<User>> =
+        firestoreService.observeUser(userId)
 
-    suspend fun updateUserFields(uid: String, fields: Map<String, Any?>): Resource<Unit> {
-        if (uid.isBlank()) return Resource.Error("Invalid user ID.")
-        if (fields.isEmpty()) return Resource.Error("No fields to update.")
-        return firestoreService.updateUser(uid, fields)
+    /**
+     * Updates specific profile fields. Validates display name length.
+     */
+    suspend fun updateUserProfile(
+        uid: String,
+        fields: Map<String, Any?>
+    ): Resource<Unit> = safeCall {
+        if (uid.isBlank()) return@safeCall Resource.Error("Invalid user ID.")
+        if (fields.isEmpty()) return@safeCall Resource.Error("No fields to update.")
+
+        // Validate displayName if being updated
+        (fields["displayName"] as? String)?.let { name ->
+            if (name.trim().length < 2)
+                return@safeCall Resource.Error("Display name must be at least 2 characters.")
+            if (name.trim().length > 30)
+                return@safeCall Resource.Error("Display name must be 30 characters or fewer.")
+        }
+
+        // Validate bio if being updated
+        (fields["bio"] as? String)?.let { bio ->
+            if (bio.length > 200)
+                return@safeCall Resource.Error("Bio must be 200 characters or fewer.")
+        }
+
+        firestoreService.updateUser(uid, fields)
+    }
+
+    /**
+     * Fetches all recipes authored by [userId].
+     */
+    suspend fun getUserRecipes(userId: String): Resource<List<Recipe>> = safeCall {
+        if (userId.isBlank()) return@safeCall Resource.Error("Invalid user ID.")
+        firestoreService.getRecipesByAuthor(userId)
     }
 
     // ── Favorites ─────────────────────────────────────────────────────────────
 
-    suspend fun addFavorite(favorite: Favorite): Resource<Unit> {
-        if (favorite.userId.isBlank()) return Resource.Error("User not logged in.")
-        if (favorite.recipeId.isBlank()) return Resource.Error("Invalid recipe.")
-        return firestoreService.addFavorite(favorite)
+    suspend fun addFavorite(favorite: Favorite): Resource<Unit> = safeCall {
+        if (favorite.userId.isBlank()) return@safeCall Resource.Error("User not logged in.")
+        if (favorite.recipeId.isBlank()) return@safeCall Resource.Error("Invalid recipe.")
+        firestoreService.addFavorite(favorite)
     }
 
-    suspend fun removeFavorite(userId: String, recipeId: String): Resource<Unit> {
-        if (userId.isBlank() || recipeId.isBlank()) return Resource.Error("Invalid IDs.")
-        return firestoreService.removeFavorite(userId, recipeId)
+    suspend fun removeFavorite(userId: String, recipeId: String): Resource<Unit> = safeCall {
+        firestoreService.removeFavorite(userId, recipeId)
     }
 
-    suspend fun getFavorites(userId: String): Resource<List<Favorite>> {
-        if (userId.isBlank()) return Resource.Error("Invalid user ID.")
-        return firestoreService.getFavorites(userId)
+    suspend fun getFavorites(userId: String): Resource<List<Favorite>> = safeCall {
+        if (userId.isBlank()) return@safeCall Resource.Error("Invalid user ID.")
+        firestoreService.getFavorites(userId)
     }
 
     suspend fun isFavorited(userId: String, recipeId: String): Boolean =
