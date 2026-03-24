@@ -63,5 +63,4 @@ object Constants {
     const val NETWORK_READ_TIMEOUT    = 60L
     const val NETWORK_WRITE_TIMEOUT   = 30L
 
-
 }
