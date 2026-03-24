@@ -8,25 +8,9 @@ import com.google.firebase.storage.StorageMetadata
 import com.google.firebase.storage.UploadTask
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 
-/**
- * StorageService
- *
- * Handles all Firebase Storage operations — image uploads, URL retrieval,
- * and deletion.
- *
- * Storage bucket layout:
- *   profile_images/{uid}/profile.jpg
- *   recipe_images/{recipeId}/{uuid}.jpg
- *   review_images/{reviewId}/{uuid}.jpg
- *   blog_covers/{blogId}/{uuid}.jpg
- *
- * Location: data/remote/firebase/StorageService.kt
- */
-@Singleton
-class StorageService @Inject constructor(
+
+class StorageService constructor(
     private val storage: FirebaseStorage
 ) {
 

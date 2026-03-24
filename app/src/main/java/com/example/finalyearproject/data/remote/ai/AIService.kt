@@ -13,8 +13,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * AIService
@@ -29,8 +27,8 @@ import javax.inject.Singleton
  *   val response = aiService.sendFoodQuery("What should I eat today?")
  *   // response is Resource<AIResponse>
  */
-@Singleton
-class AIService @Inject constructor() {
+
+class AIService constructor() {
 
     // ── OkHttp client ─────────────────────────────────────────────────────────
 

@@ -8,8 +8,6 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * AuthService
@@ -20,8 +18,7 @@ import javax.inject.Singleton
  *
  * Location: data/remote/firebase/AuthService.kt
  */
-@Singleton
-class AuthService @Inject constructor(
+class AuthService constructor(
     private val firebaseAuth: FirebaseAuth
 ) {
 
