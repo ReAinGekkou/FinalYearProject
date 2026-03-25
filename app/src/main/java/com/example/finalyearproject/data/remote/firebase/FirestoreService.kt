@@ -18,16 +18,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
-/**
- * FirestoreService — Day 3 Advanced
- *
- * New capabilities:
- *  - Case-insensitive keyword search via searchTitle field
- *  - Multi-field filtering (category, cuisine, rating, difficulty)
- *  - Cursor-based pagination via startAfter()
- *  - Recommendation engine queries
- *  - Full user profile CRUD
- */
 class FirestoreService private constructor() {
 
     private val db = FirebaseFirestore.getInstance()
