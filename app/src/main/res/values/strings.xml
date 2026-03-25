@@ -1,32 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">FinalYearProject</string>
-    <!-- AUTH -->
-    <string name="login">Login</string>
-    <string name="register">Register</string>
-    <string name="email">Email</string>
+
+    <!-- App -->
+    <string name="app_name">FoodAI</string>
+    <string name="login_tagline">Discover, cook, and share recipes</string>
+
+    <!-- Login -->
+    <string name="email">Email address</string>
     <string name="password">Password</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="btn_login">Sign In</string>
+    <string name="or">or</string>
+    <string name="no_account">Don\'t have an account?</string>
+    <string name="btn_create_account">Create Account</string>
 
-    <!-- HOME -->
-    <string name="home">Home</string>
-    <string name="view_detail">View Detail</string>
-    <string name="favorite">Add to Favorite</string>
+    <!-- Home -->
+    <string name="greeting_default">Welcome back 👋</string>
+    <string name="home_title">What are you cooking today?</string>
+    <string name="hint_search">Search recipes, ingredients…</string>
+    <string name="category_all">All</string>
+    <string name="label_featured">Featured</string>
+    <string name="label_all_recipes">All Recipes</string>
+    <string name="btn_see_all">See all</string>
+    <string name="fab_ai">AI Assistant</string>
+    <string name="empty_recipes_title">No recipes found</string>
+    <string name="empty_recipes_sub">Try a different search term or category</string>
 
-    <!-- RECIPE -->
-    <string name="recipe_detail">Recipe Detail</string>
-    <string name="buy">Buy Cookbook</string>
+    <!-- Recipe card -->
+    <string name="cd_recipe_image">Recipe image</string>
+    <string name="cd_author_avatar">Author profile picture</string>
+    <string name="cd_user_avatar">Your profile picture</string>
+    <string name="cd_no_recipes">No recipes illustration</string>
 
-    <!-- AI -->
-    <string name="ask_ai">Ask AI about cooking…</string>
-    <string name="send">Send</string>
+    <!-- AI Chat -->
+    <string name="ai_title">AI Food Assistant</string>
+    <string name="ai_status_ready">Ready to help</string>
+    <string name="ai_status_thinking">Thinking…</string>
+    <string name="hint_message">Ask about recipes, nutrition…</string>
+    <string name="ai_suggestions_label">Try asking:</string>
+    <string name="btn_show_recipe">Show Recipe</string>
+    <string name="btn_nutrition">Nutrition Info</string>
 
-    <!-- PAYMENT -->
+    <!-- Errors -->
+    <string name="error_email_empty">Please enter your email address</string>
+    <string name="error_email_invalid">Please enter a valid email address</string>
+    <string name="error_password_short">Password must be at least 6 characters</string>
+    <string name="error_network">No internet connection. Please try again.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+
+    <!-- Transition -->
     <string name="payment">Payment</string>
     <string name="pay_now">Pay Now</string>
-    <string name="payment_success">Payment Successful</string>
-
-    <!-- PROFILE -->
     <string name="profile">Profile</string>
-    <string name="language">Language</string>
-    <string name="english">English</string>
-    <string name="vietnamese">Vietnamese</string>
+    <string name="buy">Buy</string>
+    <string name="register">Register</string>
+    <string name="favorite">Favorite</string>
+
+    <!-- View Detail -->
+    <string name="view_detail">View Detail</string>
+
+    <string name="label_unknown_author">Unknown author</string>
+
+
 </resources>

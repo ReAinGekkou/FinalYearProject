@@ -1,31 +1,305 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<!--
+    activity_ai_chat.xml
+    ─────────────────────────────────────────────────────────────────────────
+    AI chat screen.
+    - RecyclerView for chat messages (scrolls upward like WhatsApp)
+    - Input bar pinned to bottom, pushes up with keyboard via windowSoftInputMode
+    - Set in AndroidManifest: android:windowSoftInputMode="adjustResize"
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/bg_screen">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvChat"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
+    <!-- ── Top bar ───────────────────────────────────────────────────────── -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layout_toolbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/bg_screen"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:elevation="2dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <LinearLayout
-        android:orientation="horizontal"
-        android:padding="8dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        <!-- Back button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_back"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            app:icon="@drawable/ic_arrow_back"
+            app:iconTint="@color/text_primary"
+            app:iconSize="20dp"
+            app:iconPadding="0dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
-        <EditText
-            android:id="@+id/edtMessage"
-            android:hint="@string/ask_ai"
-            android:layout_weight="1"
+        <!-- AI avatar -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/iv_ai_avatar"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="12dp"
+            android:src="@drawable/ic_ai_avatar"
+            android:scaleType="centerCrop"
+            android:contentDescription="@null"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.AIFoodApp.Pill"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/btn_back" />
+
+        <!-- Title + subtitle -->
+        <LinearLayout
+            android:id="@+id/layout_title"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"/>
-
-        <Button
-            android:text="@string/send"
             android:layout_height="wrap_content"
-            android:layout_width="wrap_content"/>
-    </LinearLayout>
-</LinearLayout>
+            android:orientation="vertical"
+            android:layout_marginStart="10dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/iv_ai_avatar"
+            app:layout_constraintEnd_toStartOf="@id/btn_clear">
+
+            <TextView
+                android:id="@+id/tv_toolbar_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ai_title"
+                android:textAppearance="@style/TextAppearance.AIFoodApp.H3"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tv_ai_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ai_status_ready"
+                android:textAppearance="@style/TextAppearance.AIFoodApp.Caption"
+                android:textColor="@color/status_success" />
+
+        </LinearLayout>
+
+        <!-- Clear chat button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_clear"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            app:icon="@drawable/ic_delete_outline"
+            app:iconTint="@color/text_secondary"
+            app:iconSize="20dp"
+            app:iconPadding="0dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- ── Divider ────────────────────────────────────────────────────────── -->
+    <View
+        android:id="@+id/divider_toolbar"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="@color/bg_divider"
+        app:layout_constraintTop_toBottomOf="@id/layout_toolbar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ── Suggestion chips (shown when chat is empty) ───────────────────── -->
+    <ScrollView
+        android:id="@+id/layout_suggestions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginHorizontal="16dp"
+        android:scrollbars="none"
+        android:visibility="visible"
+        app:layout_constraintTop_toBottomOf="@id/divider_toolbar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="visible">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/tv_suggestion_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ai_suggestions_label"
+                android:textAppearance="@style/TextAppearance.AIFoodApp.Body2"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chip_group_suggestions"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:layout_constraintTop_toBottomOf="@id/tv_suggestion_label"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <!-- Inflated programmatically — shown here for preview -->
+                <com.google.android.material.chip.Chip
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="What should I eat today?"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    app:chipBackgroundColor="@color/bg_card"
+                    app:chipStrokeColor="@color/brand_primary"
+                    app:chipStrokeWidth="1dp"
+                    android:textColor="@color/brand_primary"
+                    app:chipCornerRadius="16dp"
+                    tools:ignore="HardcodedText" />
+
+                <com.google.android.material.chip.Chip
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Suggest a recipe with chicken"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    app:chipBackgroundColor="@color/bg_card"
+                    app:chipStrokeColor="@color/brand_primary"
+                    app:chipStrokeWidth="1dp"
+                    android:textColor="@color/brand_primary"
+                    app:chipCornerRadius="16dp"
+                    tools:ignore="HardcodedText" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </ScrollView>
+
+    <!-- ── Chat messages RecyclerView ───────────────────────────────────── -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_chat"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:stackFromEnd="true"
+        app:layout_constraintTop_toBottomOf="@id/layout_suggestions"
+        app:layout_constraintBottom_toTopOf="@id/layout_input"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/item_chat_ai"
+        tools:itemCount="4" />
+
+    <!-- ── Typing indicator ──────────────────────────────────────────────── -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_typing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="4dp"
+        android:visibility="gone"
+        app:cardCornerRadius="18dp"
+        app:cardBackgroundColor="@color/bg_card"
+        app:cardElevation="1dp"
+        app:strokeColor="@color/bubble_ai_stroke"
+        app:strokeWidth="1dp"
+        app:layout_constraintBottom_toTopOf="@id/layout_input"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="gone">
+
+        <!-- 3-dot typing animation — replace with Lottie for production -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:text="●  ●  ●"
+            android:textColor="@color/text_hint"
+            android:textSize="10sp"
+            android:letterSpacing="0.1"
+            tools:ignore="HardcodedText" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── Input area ────────────────────────────────────────────────────── -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layout_input"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/bg_screen"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="12dp"
+        android:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Divider above input -->
+        <View
+            android:id="@+id/divider_input"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginBottom="8dp"
+            android:background="@color/bg_divider"
+            app:layout_constraintBottom_toTopOf="@id/til_message"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Message input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_message"
+            style="@style/Widget.AIFoodApp.ChatInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_message"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btn_send"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLines="4"
+                android:minLines="1"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:imeOptions="actionSend"
+                android:textAppearance="@style/TextAppearance.AIFoodApp.Body1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Send button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_send"
+            style="@style/Widget.AIFoodApp.Button.Send"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            app:icon="@drawable/ic_send"
+            app:iconTint="@color/white"
+            app:iconSize="20dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

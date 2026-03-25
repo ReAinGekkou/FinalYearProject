@@ -1,9 +1,203 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.FinalYearProject" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         Base application theme
+         ══════════════════════════════════════════════════════════════════════ -->
+    <style name="Theme.AIFoodApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+
+        <!-- Brand colors -->
+        <item name="colorPrimary">@color/brand_primary</item>
+        <item name="colorPrimaryDark">@color/brand_primary_dark</item>
+        <item name="colorPrimaryVariant">@color/brand_primary_dark</item>
+        <item name="colorOnPrimary">@color/text_on_primary</item>
+
+        <item name="colorSecondary">@color/brand_primary_light</item>
+        <item name="colorSecondaryVariant">@color/brand_primary</item>
+        <item name="colorOnSecondary">@color/text_on_primary</item>
+
+        <!-- Backgrounds -->
+        <item name="android:windowBackground">@color/bg_screen</item>
+        <item name="colorSurface">@color/bg_card</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:colorBackground">@color/bg_screen</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+
+        <!-- Error -->
+        <item name="colorError">@color/status_error</item>
+
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/bg_screen</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Navigation bar -->
+        <item name="android:navigationBarColor">@color/bg_screen</item>
+
+        <!-- Typography -->
+        <item name="android:fontFamily">@font/inter</item>
+
+        <!-- Shape -->
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.AIFoodApp.MediumComponent</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.AIFoodApp.LargeComponent</item>
+
+        <!-- TextInputLayout -->
+        <item name="textInputStyle">@style/Widget.AIFoodApp.TextInputLayout</item>
+
+        <!-- MaterialButton -->
+        <item name="materialButtonStyle">@style/Widget.AIFoodApp.Button.Primary</item>
+
     </style>
 
-    <style name="Theme.FinalYearProject" parent="Base.Theme.FinalYearProject" />
+    <!-- ══════════════════════════════════════════════════════════════════════
+         Shape appearances
+         ══════════════════════════════════════════════════════════════════════ -->
+    <style name="ShapeAppearance.AIFoodApp.MediumComponent" parent="ShapeAppearance.MaterialComponents.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="ShapeAppearance.AIFoodApp.LargeComponent" parent="ShapeAppearance.MaterialComponents.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="ShapeAppearance.AIFoodApp.Pill" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         TextInputLayout styles
+         ══════════════════════════════════════════════════════════════════════ -->
+    <style name="Widget.AIFoodApp.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxStrokeColor">@color/selector_input_stroke</item>
+        <item name="boxStrokeWidth">1.5dp</item>
+        <item name="hintTextColor">@color/brand_primary</item>
+        <item name="android:paddingTop">4dp</item>
+    </style>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         Button styles
+         ══════════════════════════════════════════════════════════════════════ -->
+    <style name="Widget.AIFoodApp.Button.Primary" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/brand_primary</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:letterSpacing">0.02</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="elevation">0dp</item>
+    </style>
+
+    <style name="Widget.AIFoodApp.Button.Text" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:textColor">@color/brand_primary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="rippleColor">@color/brand_primary_surface</item>
+    </style>
+
+    <style name="Widget.AIFoodApp.Button.Send" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/brand_primary</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="elevation">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="iconPadding">0dp</item>
+    </style>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         Card style
+         ══════════════════════════════════════════════════════════════════════ -->
+    <style name="Widget.AIFoodApp.Card" parent="Widget.MaterialComponents.CardView">
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardElevation">2dp</item>
+        <item name="cardBackgroundColor">@color/bg_card</item>
+        <item name="contentPadding">0dp</item>
+        <item name="android:layout_marginBottom">12dp</item>
+    </style>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         Typography
+         ══════════════════════════════════════════════════════════════════════ -->
+    <style name="TextAppearance.AIFoodApp.H1" parent="TextAppearance.MaterialComponents.Headline4">
+        <item name="android:textSize">28sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <style name="TextAppearance.AIFoodApp.H2" parent="TextAppearance.MaterialComponents.Headline5">
+        <item name="android:textSize">22sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.AIFoodApp.H3" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.AIFoodApp.Body1" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:lineSpacingMultiplier">1.4</item>
+    </style>
+
+    <style name="TextAppearance.AIFoodApp.Body2" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:lineSpacingMultiplier">1.4</item>
+    </style>
+
+    <style name="TextAppearance.AIFoodApp.Caption" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/text_hint</item>
+    </style>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         Toolbar
+         ══════════════════════════════════════════════════════════════════════ -->
+    <style name="Widget.AIFoodApp.Toolbar" parent="Widget.MaterialComponents.Toolbar">
+        <item name="android:background">@color/bg_screen</item>
+        <item name="android:elevation">0dp</item>
+        <item name="titleTextAppearance">@style/TextAppearance.AIFoodApp.H3</item>
+    </style>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         Search bar
+         ══════════════════════════════════════════════════════════════════════ -->
+    <style name="Widget.AIFoodApp.SearchInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">24dp</item>
+        <item name="boxCornerRadiusTopEnd">24dp</item>
+        <item name="boxCornerRadiusBottomStart">24dp</item>
+        <item name="boxCornerRadiusBottomEnd">24dp</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+        <item name="boxBackgroundColor">@color/bg_card</item>
+        <item name="hintTextColor">@color/text_hint</item>
+    </style>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         Chat input
+         ══════════════════════════════════════════════════════════════════════ -->
+    <style name="Widget.AIFoodApp.ChatInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">24dp</item>
+        <item name="boxCornerRadiusTopEnd">24dp</item>
+        <item name="boxCornerRadiusBottomStart">24dp</item>
+        <item name="boxCornerRadiusBottomEnd">24dp</item>
+        <item name="boxStrokeColor">@color/bg_divider</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">1.5dp</item>
+        <item name="boxBackgroundColor">@color/bg_card</item>
+        <item name="hintTextColor">@color/text_hint</item>
+    </style>
+
 </resources>

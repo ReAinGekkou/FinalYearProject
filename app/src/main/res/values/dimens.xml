@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spacing -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+    <dimen name="spacing_xxl">48dp</dimen>
+
+    <!-- Corner radius -->
+    <dimen name="radius_sm">8dp</dimen>
+    <dimen name="radius_md">12dp</dimen>
+    <dimen name="radius_lg">16dp</dimen>
+    <dimen name="radius_pill">50dp</dimen>
+
+    <!-- Cards -->
+    <dimen name="card_elevation">2dp</dimen>
+    <dimen name="card_radius">12dp</dimen>
+
+    <!-- Touch targets -->
+    <dimen name="touch_target_min">48dp</dimen>
+
+    <!-- Screen -->
+    <dimen name="screen_min_height">600dp</dimen>
+    <dimen name="screen_horizontal_padding">16dp</dimen>
+
+    <!-- Typography -->
+    <dimen name="text_h1">28sp</dimen>
+    <dimen name="text_h2">22sp</dimen>
+    <dimen name="text_h3">18sp</dimen>
+    <dimen name="text_body1">16sp</dimen>
+    <dimen name="text_body2">14sp</dimen>
+    <dimen name="text_caption">12sp</dimen>
+
+    <!-- Recipe card image ratio height -->
+    <dimen name="recipe_image_height">200dp</dimen>
+
+    <!-- Bottom nav height -->
+    <dimen name="bottom_nav_height">64dp</dimen>
+</resources>

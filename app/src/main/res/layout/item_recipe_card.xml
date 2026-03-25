@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_recipe_card.xml
+    ─────────────────────────────────────────────────────────────────────────
+    Recipe card for the vertical feed RecyclerView.
+    Single ConstraintLayout inside MaterialCardView — zero nesting.
+    Image aspect ratio is enforced via app:layout_constraintDimensionRatio.
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_recipe"
+    style="@style/Widget.AIFoodApp.Card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- ── Recipe image ──────────────────────────────────────────────── -->
+        <ImageView
+            android:id="@+id/iv_recipe_image"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/cd_recipe_image"
+            android:src="@android:drawable/ic_menu_gallery"
+            app:layout_constraintDimensionRatio="16:9"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:src="@tools:sample/backgrounds/scenic" />
+
+        <!-- Gradient overlay at bottom of image for readability -->
+        <View
+            android:id="@+id/gradient_overlay"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:background="@drawable/gradient_image_bottom"
+            app:layout_constraintBottom_toBottomOf="@id/iv_recipe_image"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- ── Category chip (on image) ──────────────────────────────────── -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_category"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="10dp"
+            android:text="Dinner"
+            android:textColor="@color/brand_primary"
+            android:textSize="11sp"
+            app:chipBackgroundColor="@color/bg_card"
+            app:chipCornerRadius="14dp"
+            app:chipMinHeight="28dp"
+            app:chipStrokeWidth="0dp"
+            app:chipStartPadding="8dp"
+            app:chipEndPadding="8dp"
+            app:layout_constraintTop_toTopOf="@id/iv_recipe_image"
+            app:layout_constraintStart_toStartOf="@id/iv_recipe_image"
+            tools:text="Dinner" />
+
+        <!-- ── Favorite button ────────────────────────────────────────────── -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_favorite"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="6dp"
+            android:padding="8dp"
+            app:icon="@android:drawable/btn_star_big_off"
+            app:iconTint="@color/white"
+            app:iconSize="20dp"
+            app:iconPadding="0dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            app:layout_constraintTop_toTopOf="@id/iv_recipe_image"
+            app:layout_constraintEnd_toEndOf="@id/iv_recipe_image"
+            tools:ignore="SmallSp" />
+
+        <!-- ── Recipe title ──────────────────────────────────────────────── -->
+        <TextView
+            android:id="@+id/tv_recipe_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginTop="12dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textAppearance="@style/TextAppearance.AIFoodApp.H3"
+            android:textSize="16sp"
+            app:layout_constraintTop_toBottomOf="@id/iv_recipe_image"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="Creamy Garlic Parmesan Chicken Pasta" />
+
+        <!-- ── Rating bar ────────────────────────────────────────────────── -->
+        <RatingBar
+            android:id="@+id/rating_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="6dp"
+            android:isIndicator="true"
+            android:numStars="5"
+            android:rating="4.5"
+            android:stepSize="0.5"
+            android:scaleX="0.75"
+            android:scaleY="0.75"
+            android:transformPivotX="0dp"
+            android:transformPivotY="0dp"
+            style="?android:attr/ratingBarStyleSmall"
+            app:layout_constraintTop_toBottomOf="@id/tv_recipe_title"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/tv_rating_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textAppearance="@style/TextAppearance.AIFoodApp.Caption"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            app:layout_constraintTop_toTopOf="@id/rating_bar"
+            app:layout_constraintBottom_toBottomOf="@id/rating_bar"
+            app:layout_constraintStart_toEndOf="@id/rating_bar"
+            tools:text="4.5 (128)" />
+
+        <!-- ── Divider row: Author | Time | Difficulty ───────────────────── -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/row_meta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="14dp"
+            app:layout_constraintTop_toBottomOf="@id/rating_bar"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <!-- Author avatar -->
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/iv_author_avatar"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/sym_def_app_icon"
+                android:scaleType="centerCrop"
+                android:contentDescription="@string/cd_author_avatar"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.AIFoodApp.Pill"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <!-- Author name -->
+            <TextView
+                android:id="@+id/tv_author_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textAppearance="@style/TextAppearance.AIFoodApp.Caption"
+                android:textColor="@color/text_secondary"
+                android:maxLines="1"
+                android:ellipsize="end"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@id/iv_author_avatar"
+                app:layout_constraintEnd_toStartOf="@id/iv_time_icon"
+                tools:text="Chef Maria" />
+
+            <!-- Time icon -->
+            <ImageView
+                android:id="@+id/iv_time_icon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@android:drawable/ic_menu_recent_history"
+                android:contentDescription="@null"
+                app:tint="@color/text_hint"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/tv_cook_time" />
+
+            <!-- Cook time -->
+            <TextView
+                android:id="@+id/tv_cook_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="12dp"
+                android:textAppearance="@style/TextAppearance.AIFoodApp.Caption"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/chip_difficulty"
+                tools:text="30 min" />
+
+            <!-- Difficulty chip -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_difficulty"
+                android:layout_width="wrap_content"
+                android:layout_height="24dp"
+                android:textSize="10sp"
+                app:chipBackgroundColor="@color/brand_primary_surface"
+                app:chipCornerRadius="12dp"
+                app:chipMinHeight="24dp"
+                app:chipStrokeWidth="0dp"
+                app:chipStartPadding="6dp"
+                app:chipEndPadding="6dp"
+                android:textColor="@color/brand_primary"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:text="Easy" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

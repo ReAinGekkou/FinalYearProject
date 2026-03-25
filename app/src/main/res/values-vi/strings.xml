@@ -1,34 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- AUTH -->
-    <string name="login">Đăng nhập</string>
-    <string name="register">Đăng ký</string>
-    <string name="email">Email</string>
+    <!-- App -->
+    <string name="app_name">FoodAI</string>
+    <string name="login_tagline">Khám phá, nấu ăn và chia sẻ công thức</string>
+
+    <!-- Login -->
+    <string name="email">Địa chỉ email</string>
     <string name="password">Mật khẩu</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+    <string name="btn_login">Đăng nhập</string>
+    <string name="or">hoặc</string>
+    <string name="no_account">Chưa có tài khoản?</string>
+    <string name="btn_create_account">Tạo tài khoản</string>
 
-    <!-- HOME -->
-    <string name="home">Trang chủ</string>
-    <string name="view_detail">Xem chi tiết</string>
-    <string name="favorite">Yêu thích</string>
+    <!-- Home -->
+    <string name="greeting_default">Chào mừng bạn quay lại 👋</string>
+    <string name="home_title">Hôm nay bạn muốn nấu gì?</string>
+    <string name="hint_search">Tìm kiếm công thức, nguyên liệu…</string>
+    <string name="category_all">Tất cả</string>
+    <string name="label_featured">Nổi bật</string>
+    <string name="label_all_recipes">Tất cả công thức</string>
+    <string name="btn_see_all">Xem tất cả</string>
+    <string name="fab_ai">Trợ lý AI</string>
+    <string name="empty_recipes_title">Không tìm thấy công thức</string>
+    <string name="empty_recipes_sub">Hãy thử từ khóa hoặc danh mục khác</string>
 
-    <!-- RECIPE -->
-    <string name="recipe_detail">Chi tiết công thức</string>
-    <string name="buy">Mua sách nấu ăn</string>
+    <!-- Recipe card -->
+    <string name="cd_recipe_image">Hình ảnh món ăn</string>
+    <string name="cd_author_avatar">Ảnh đại diện tác giả</string>
+    <string name="cd_user_avatar">Ảnh đại diện của bạn</string>
+    <string name="cd_no_recipes">Hình minh họa không có công thức</string>
 
-    <!-- AI -->
-    <string name="ask_ai">Hỏi AI về nấu ăn…</string>
-    <string name="send">Gửi</string>
+    <!-- AI Chat -->
+    <string name="ai_title">Trợ lý ẩm thực AI</string>
+    <string name="ai_status_ready">Sẵn sàng hỗ trợ</string>
+    <string name="ai_status_thinking">Đang suy nghĩ…</string>
+    <string name="hint_message">Hỏi về công thức, dinh dưỡng…</string>
+    <string name="ai_suggestions_label">Gợi ý:</string>
+    <string name="btn_show_recipe">Xem công thức</string>
+    <string name="btn_nutrition">Thông tin dinh dưỡng</string>
 
-    <!-- PAYMENT -->
-    <string name="payment">Thanh toán</string>
-    <string name="pay_now">Thanh toán ngay</string>
-    <string name="payment_success">Thanh toán thành công</string>
+    <!-- Errors -->
+    <string name="error_email_empty">Vui lòng nhập email</string>
+    <string name="error_email_invalid">Email không hợp lệ</string>
+    <string name="error_password_short">Mật khẩu phải có ít nhất 6 ký tự</string>
+    <string name="error_network">Không có kết nối internet. Vui lòng thử lại.</string>
+    <string name="error_generic">Đã xảy ra lỗi. Vui lòng thử lại.</string>
 
-    <!-- PROFILE -->
-    <string name="profile">Cá nhân</string>
-    <string name="language">Ngôn ngữ</string>
-    <string name="english">Tiếng Anh</string>
-    <string name="vietnamese">Tiếng Việt</string>
+    <!-- Transition -->
+    <string name="payment">Phương thức trả</string>
+    <string name="pay_now">Trả Liền</string>
+    <string name="profile">Tài Khoản</string>
+    <string name="buy">Mua</string>
+    <string name="register">Đăng Kí</string>
+    <string name="favorite">Yêu Thích</string>
+
+    <!-- View Detail -->
+    <string name="view_detail">View Detail</string>
+
+    <string name="label_unknown_author">Tác Giả Ẩn</string>
 
 </resources>

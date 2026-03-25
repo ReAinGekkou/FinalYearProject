@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_chat_ai.xml — left-aligned white bubble with AI avatar
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingBottom="8dp">
+
+    <!-- AI avatar -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/iv_ai_avatar"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/ic_ai_avatar"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.AIFoodApp.Pill"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Bubble — max 72% of screen width, left aligned -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_bubble"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        app:cardCornerRadius="18dp"
+        app:cardBackgroundColor="@color/bubble_ai"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/bubble_ai_stroke"
+        app:strokeWidth="1dp"
+        app:layout_constraintTop_toTopOf="@id/iv_ai_avatar"
+        app:layout_constraintStart_toEndOf="@id/iv_ai_avatar"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintWidth_percent="0.72">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp">
+
+            <!-- Message text — supports markdown-like bold via Spannable -->
+            <TextView
+                android:id="@+id/tv_message"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/bubble_text_ai"
+                android:textAppearance="@style/TextAppearance.AIFoodApp.Body1"
+                android:textSize="15sp"
+                android:lineSpacingMultiplier="1.5"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:text="I'd suggest a **Lemon Herb Chicken Stir-Fry**!\n\nIt's quick (under 30 minutes), healthy, and uses the ingredients you have. Would you like the full recipe?" />
+
+            <!-- Action buttons row (optional — shown for recipe suggestions) -->
+            <LinearLayout
+                android:id="@+id/layout_actions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/tv_message"
+                app:layout_constraintStart_toStartOf="parent"
+                tools:visibility="visible">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_action_recipe"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="@string/btn_show_recipe"
+                    android:textSize="12sp"
+                    android:paddingHorizontal="12dp"
+                    app:strokeColor="@color/brand_primary"
+                    android:textColor="@color/brand_primary"
+                    android:minHeight="0dp"
+                    app:cornerRadius="16dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_action_nutrition"
+                    style="@style/Widget.AIFoodApp.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="@string/btn_nutrition"
+                    android:textSize="12sp"
+                    android:paddingHorizontal="8dp"
+                    android:minHeight="0dp"
+                    android:layout_marginStart="4dp" />
+
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Timestamp -->
+    <TextView
+        android:id="@+id/tv_timestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:layout_marginStart="38dp"
+        android:textAppearance="@style/TextAppearance.AIFoodApp.Caption"
+        android:textSize="11sp"
+        app:layout_constraintTop_toBottomOf="@id/card_bubble"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="2:31 PM" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
