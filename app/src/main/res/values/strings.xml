@@ -1,20 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- App -->
+    <!-- ── App ─────────────────────────────────────────────────────────── -->
     <string name="app_name">FoodAI</string>
     <string name="login_tagline">Discover, cook, and share recipes</string>
 
-    <!-- Login -->
-    <string name="email">Email address</string>
-    <string name="password">Password</string>
+    <!-- ── Login ───────────────────────────────────────────────────────── -->
+    <string name="hint_email">Email address</string>
+    <string name="hint_password">Password</string>
+    <string name="hint_display_name">Your name</string>
+    <string name="hint_confirm_password">Confirm password</string>
     <string name="forgot_password">Forgot password?</string>
     <string name="btn_login">Sign In</string>
     <string name="or">or</string>
     <string name="no_account">Don\'t have an account?</string>
+    <string name="have_account">Already have an account?</string>
     <string name="btn_create_account">Create Account</string>
+    <string name="btn_google_sign_in">Continue with Google</string>
 
-    <!-- Home -->
+    <!-- ── Register ────────────────────────────────────────────────────── -->
+    <string name="register_title">Create Account</string>
+    <string name="register_subtitle">Join our food community</string>
+
+    <!-- ── Home ────────────────────────────────────────────────────────── -->
     <string name="greeting_default">Welcome back 👋</string>
     <string name="home_title">What are you cooking today?</string>
     <string name="hint_search">Search recipes, ingredients…</string>
@@ -24,15 +32,35 @@
     <string name="btn_see_all">See all</string>
     <string name="fab_ai">AI Assistant</string>
     <string name="empty_recipes_title">No recipes found</string>
-    <string name="empty_recipes_sub">Try a different search term or category</string>
+    <string name="empty_recipes_sub">Try a different search or category</string>
+    <string name="label_unknown_author">Unknown</string>
+    <string name="view_detail">View Detail</string>
 
-    <!-- Recipe card -->
-    <string name="cd_recipe_image">Recipe image</string>
-    <string name="cd_author_avatar">Author profile picture</string>
-    <string name="cd_user_avatar">Your profile picture</string>
-    <string name="cd_no_recipes">No recipes illustration</string>
+    <!-- ── Recipe Detail ───────────────────────────────────────────────── -->
+    <string name="favorite">Favorite</string>
+    <string name="buy">Buy Ingredients</string>
+    <string name="label_ingredients">Ingredients</string>
+    <string name="label_instructions">Instructions</string>
+    <string name="label_reviews">Reviews</string>
+    <string name="btn_add_review">Add Review</string>
+    <string name="label_prep_time">Prep Time</string>
+    <string name="label_cook_time">Cook Time</string>
+    <string name="label_servings">Servings</string>
 
-    <!-- AI Chat -->
+    <!-- ── Profile ─────────────────────────────────────────────────────── -->
+    <string name="profile">Profile</string>
+    <string name="btn_edit_profile">Edit Profile</string>
+    <string name="label_my_recipes">My Recipes</string>
+    <string name="label_my_favorites">My Favorites</string>
+    <string name="btn_logout">Sign Out</string>
+
+    <!-- ── Payment ─────────────────────────────────────────────────────── -->
+    <string name="payment">Payment</string>
+    <string name="pay_now">Pay Now</string>
+    <string name="label_order_summary">Order Summary</string>
+    <string name="label_total">Total</string>
+
+    <!-- ── AI Chat ─────────────────────────────────────────────────────── -->
     <string name="ai_title">AI Food Assistant</string>
     <string name="ai_status_ready">Ready to help</string>
     <string name="ai_status_thinking">Thinking…</string>
@@ -41,25 +69,24 @@
     <string name="btn_show_recipe">Show Recipe</string>
     <string name="btn_nutrition">Nutrition Info</string>
 
-    <!-- Errors -->
+    <!-- ── Errors ───────────────────────────────────────────────────────── -->
     <string name="error_email_empty">Please enter your email address</string>
     <string name="error_email_invalid">Please enter a valid email address</string>
     <string name="error_password_short">Password must be at least 6 characters</string>
+    <string name="error_password_short_register">Password must be at least 8 characters</string>
+    <string name="error_passwords_mismatch">Passwords do not match</string>
+    <string name="error_display_name_short">Name must be at least 2 characters</string>
     <string name="error_network">No internet connection. Please try again.</string>
     <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_google_sign_in">Google sign-in failed. Please try again.</string>
 
-    <!-- Transition -->
-    <string name="payment">Payment</string>
-    <string name="pay_now">Pay Now</string>
-    <string name="profile">Profile</string>
-    <string name="buy">Buy</string>
-    <string name="register">Register</string>
-    <string name="favorite">Favorite</string>
+    <!-- ── Success ──────────────────────────────────────────────────────── -->
+    <string name="msg_reset_email_sent">Password reset email sent. Check your inbox.</string>
 
-    <!-- View Detail -->
-    <string name="view_detail">View Detail</string>
-
-    <string name="label_unknown_author">Unknown author</string>
-
+    <!-- ── Content descriptions ────────────────────────────────────────── -->
+    <string name="cd_recipe_image">Recipe image</string>
+    <string name="cd_author_avatar">Author profile picture</string>
+    <string name="cd_user_avatar">Your profile picture</string>
+    <string name="cd_no_recipes">No recipes illustration</string>
 
 </resources>

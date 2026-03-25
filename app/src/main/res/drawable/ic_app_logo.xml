@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ic_app_logo.xml
+    Place at: res/drawable/ic_app_logo.xml
+    A simple fork + leaf mark that works as an app logo at any size.
+    Uses brand_primary color (#2E7D32).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+
+    <!-- Background circle -->
+    <path
+        android:fillColor="#E8F5E9"
+        android:pathData="M40,40 m-38,0 a38,38 0 1,0 76,0 a38,38 0 1,0 -76,0" />
+
+    <!-- Fork handle -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M36,52 L36,28 Q36,26 38,26 Q40,26 40,28 L40,52 Q40,54 38,54 Q36,54 36,52 Z" />
+
+    <!-- Fork left tine -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M32,28 L32,36 Q32,38 34,38 Q36,38 36,36 L36,28 Q36,26 34,26 Q32,26 32,28 Z" />
+
+    <!-- Fork right tine -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M40,28 L40,36 Q40,38 42,38 Q44,38 44,36 L44,28 Q44,26 42,26 Q40,26 40,28 Z" />
+
+    <!-- Leaf shape on the right -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M50,24 Q58,24 58,32 Q58,40 50,42 Q50,42 48,40 Q44,36 44,32 Q44,24 50,24 Z" />
+
+    <!-- Leaf vein -->
+    <path
+        android:fillColor="#2E7D32"
+        android:strokeColor="#2E7D32"
+        android:strokeWidth="1"
+        android:fillAlpha="0"
+        android:pathData="M50,26 L50,40" />
+
+</vector>

@@ -1,64 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Place at: res/values-vi/strings.xml -->
 <resources>
 
-    <!-- App -->
+    <!-- ── App ─────────────────────────────────────────────────────────── -->
     <string name="app_name">FoodAI</string>
     <string name="login_tagline">Khám phá, nấu ăn và chia sẻ công thức</string>
 
-    <!-- Login -->
-    <string name="email">Địa chỉ email</string>
-    <string name="password">Mật khẩu</string>
+    <!-- ── Login ───────────────────────────────────────────────────────── -->
+    <string name="hint_email">Địa chỉ email</string>
+    <string name="hint_password">Mật khẩu</string>
+    <string name="hint_display_name">Tên của bạn</string>
+    <string name="hint_confirm_password">Xác nhận mật khẩu</string>
     <string name="forgot_password">Quên mật khẩu?</string>
-    <string name="btn_login">Đăng nhập</string>
+    <string name="btn_login">Đăng Nhập</string>
     <string name="or">hoặc</string>
     <string name="no_account">Chưa có tài khoản?</string>
-    <string name="btn_create_account">Tạo tài khoản</string>
+    <string name="have_account">Đã có tài khoản?</string>
+    <string name="btn_create_account">Tạo Tài Khoản</string>
+    <string name="btn_google_sign_in">Tiếp tục với Google</string>
 
-    <!-- Home -->
-    <string name="greeting_default">Chào mừng bạn quay lại 👋</string>
-    <string name="home_title">Hôm nay bạn muốn nấu gì?</string>
-    <string name="hint_search">Tìm kiếm công thức, nguyên liệu…</string>
+    <!-- ── Register ────────────────────────────────────────────────────── -->
+    <string name="register_title">Tạo Tài Khoản</string>
+    <string name="register_subtitle">Tham gia cộng đồng ẩm thực</string>
+
+    <!-- ── Home ────────────────────────────────────────────────────────── -->
+    <string name="greeting_default">Chào mừng trở lại 👋</string>
+    <string name="home_title">Hôm nay bạn nấu gì?</string>
+    <string name="hint_search">Tìm công thức, nguyên liệu…</string>
     <string name="category_all">Tất cả</string>
     <string name="label_featured">Nổi bật</string>
     <string name="label_all_recipes">Tất cả công thức</string>
     <string name="btn_see_all">Xem tất cả</string>
     <string name="fab_ai">Trợ lý AI</string>
     <string name="empty_recipes_title">Không tìm thấy công thức</string>
-    <string name="empty_recipes_sub">Hãy thử từ khóa hoặc danh mục khác</string>
+    <string name="empty_recipes_sub">Thử từ khóa hoặc danh mục khác</string>
+    <string name="label_unknown_author">Không rõ</string>
+    <string name="view_detail">Xem chi tiết</string>
 
-    <!-- Recipe card -->
-    <string name="cd_recipe_image">Hình ảnh món ăn</string>
-    <string name="cd_author_avatar">Ảnh đại diện tác giả</string>
-    <string name="cd_user_avatar">Ảnh đại diện của bạn</string>
-    <string name="cd_no_recipes">Hình minh họa không có công thức</string>
+    <!-- ── Recipe Detail ───────────────────────────────────────────────── -->
+    <string name="favorite">Yêu thích</string>
+    <string name="buy">Mua nguyên liệu</string>
+    <string name="label_ingredients">Nguyên liệu</string>
+    <string name="label_instructions">Hướng dẫn</string>
+    <string name="label_reviews">Đánh giá</string>
+    <string name="btn_add_review">Thêm đánh giá</string>
+    <string name="label_prep_time">Chuẩn bị</string>
+    <string name="label_cook_time">Nấu</string>
+    <string name="label_servings">Khẩu phần</string>
 
-    <!-- AI Chat -->
-    <string name="ai_title">Trợ lý ẩm thực AI</string>
+    <!-- ── Profile ─────────────────────────────────────────────────────── -->
+    <string name="profile">Hồ sơ</string>
+    <string name="btn_edit_profile">Chỉnh sửa hồ sơ</string>
+    <string name="label_my_recipes">Công thức của tôi</string>
+    <string name="label_my_favorites">Yêu thích</string>
+    <string name="btn_logout">Đăng Xuất</string>
+
+    <!-- ── Payment ─────────────────────────────────────────────────────── -->
+    <string name="payment">Thanh toán</string>
+    <string name="pay_now">Thanh toán ngay</string>
+    <string name="label_order_summary">Tóm tắt đơn hàng</string>
+    <string name="label_total">Tổng cộng</string>
+
+    <!-- ── AI Chat ─────────────────────────────────────────────────────── -->
+    <string name="ai_title">Trợ lý AI Ẩm thực</string>
     <string name="ai_status_ready">Sẵn sàng hỗ trợ</string>
     <string name="ai_status_thinking">Đang suy nghĩ…</string>
     <string name="hint_message">Hỏi về công thức, dinh dưỡng…</string>
-    <string name="ai_suggestions_label">Gợi ý:</string>
-    <string name="btn_show_recipe">Xem công thức</string>
+    <string name="ai_suggestions_label">Thử hỏi:</string>
+    <string name="btn_show_recipe">Xem Công Thức</string>
     <string name="btn_nutrition">Thông tin dinh dưỡng</string>
 
-    <!-- Errors -->
-    <string name="error_email_empty">Vui lòng nhập email</string>
-    <string name="error_email_invalid">Email không hợp lệ</string>
+    <!-- ── Errors ───────────────────────────────────────────────────────── -->
+    <string name="error_email_empty">Vui lòng nhập địa chỉ email</string>
+    <string name="error_email_invalid">Vui lòng nhập email hợp lệ</string>
     <string name="error_password_short">Mật khẩu phải có ít nhất 6 ký tự</string>
+    <string name="error_password_short_register">Mật khẩu phải có ít nhất 8 ký tự</string>
+    <string name="error_passwords_mismatch">Mật khẩu không khớp</string>
+    <string name="error_display_name_short">Tên phải có ít nhất 2 ký tự</string>
     <string name="error_network">Không có kết nối internet. Vui lòng thử lại.</string>
     <string name="error_generic">Đã xảy ra lỗi. Vui lòng thử lại.</string>
+    <string name="error_google_sign_in">Đăng nhập Google thất bại. Vui lòng thử lại.</string>
 
-    <!-- Transition -->
-    <string name="payment">Phương thức trả</string>
-    <string name="pay_now">Trả Liền</string>
-    <string name="profile">Tài Khoản</string>
-    <string name="buy">Mua</string>
-    <string name="register">Đăng Kí</string>
-    <string name="favorite">Yêu Thích</string>
+    <!-- ── Success ──────────────────────────────────────────────────────── -->
+    <string name="msg_reset_email_sent">Email đặt lại mật khẩu đã được gửi. Kiểm tra hộp thư.</string>
 
-    <!-- View Detail -->
-    <string name="view_detail">View Detail</string>
-
-    <string name="label_unknown_author">Tác Giả Ẩn</string>
+    <!-- ── Content descriptions ────────────────────────────────────────── -->
+    <string name="cd_recipe_image">Hình ảnh công thức</string>
+    <string name="cd_author_avatar">Ảnh đại diện tác giả</string>
+    <string name="cd_user_avatar">Ảnh đại diện của bạn</string>
+    <string name="cd_no_recipes">Minh họa không có công thức</string>
 
 </resources>
