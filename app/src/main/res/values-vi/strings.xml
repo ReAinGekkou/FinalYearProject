@@ -90,4 +90,6 @@
     <string name="cd_user_avatar">Ảnh đại diện của bạn</string>
     <string name="cd_no_recipes">Minh họa không có công thức</string>
 
+    <string name="default_web_client_id">136920309757-81ofi7432atv0n0frokcl9ej1spfecgq.apps.googleusercontent.com</string>
+
 </resources>
