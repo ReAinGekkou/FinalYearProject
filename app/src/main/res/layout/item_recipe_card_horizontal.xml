@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_recipe"
+    android:layout_width="160dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/bg_card">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Recipe image -->
+        <ImageView
+            android:id="@+id/iv_recipe_image"
+            android:layout_width="0dp"
+            android:layout_height="110dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/cd_recipe_image"
+            android:src="@drawable/ic_recipe_placeholder"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:src="@tools:sample/backgrounds/scenic" />
+
+        <!-- Favorite button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_favorite"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="6dp"
+            app:icon="@drawable/ic_favorite_outline"
+            app:iconTint="@color/white"
+            app:iconSize="18dp"
+            app:iconPadding="0dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            app:layout_constraintTop_toTopOf="@id/iv_recipe_image"
+            app:layout_constraintEnd_toEndOf="@id/iv_recipe_image" />
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tv_recipe_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginTop="8dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/text_primary"
+            app:layout_constraintTop_toBottomOf="@id/iv_recipe_image"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="Phở Bò Hà Nội" />
+
+        <!-- Cook time + likes row -->
+        <LinearLayout
+            android:id="@+id/row_meta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="10dp"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toBottomOf="@id/tv_recipe_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@drawable/ic_time"
+                android:contentDescription="@null"
+                app:tint="@color/text_hint" />
+
+            <TextView
+                android:id="@+id/tv_cook_time"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="3dp"
+                android:textSize="11sp"
+                android:textColor="@color/text_hint"
+                tools:text="30 min" />
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@drawable/ic_favorite_outline"
+                android:contentDescription="@null"
+                app:tint="@color/text_hint" />
+
+            <TextView
+                android:id="@+id/tv_like_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:textSize="11sp"
+                android:textColor="@color/text_hint"
+                tools:text="245" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

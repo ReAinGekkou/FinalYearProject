@@ -1,19 +1,200 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+    activity_main.xml
+    Bottom navigation: Home | Community | [FAB Create] | Chat | Profile
+    FragmentContainerView hosts each tab's fragment.
+-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:background="@color/bg_screen">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- ── Fragment host ───────────────────────────────────────────────── -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:defaultNavHost="true"
+        app:navGraph="@navigation/nav_graph"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+    <!-- ── Bottom navigation background card ─────────────────────────── -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_bottom_nav"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_gravity="bottom"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@color/white"
+        app:strokeWidth="0dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp">
+
+            <!-- Home -->
+            <LinearLayout
+                android:id="@+id/nav_home"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/nav_community"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <ImageView
+                    android:id="@+id/iv_home"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_home"
+                    android:contentDescription="@string/nav_home"
+                    app:tint="@color/brand_primary" />
+                <TextView
+                    android:id="@+id/tv_nav_home"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/nav_home"
+                    android:textSize="10sp"
+                    android:textColor="@color/brand_primary" />
+
+            </LinearLayout>
+
+            <!-- Community -->
+            <LinearLayout
+                android:id="@+id/nav_community"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:layout_constraintStart_toEndOf="@id/nav_home"
+                app:layout_constraintEnd_toStartOf="@id/fab_create"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <ImageView
+                    android:id="@+id/iv_community"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_community"
+                    android:contentDescription="@string/nav_community"
+                    app:tint="@color/text_hint" />
+                <TextView
+                    android:id="@+id/tv_nav_community"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/nav_community"
+                    android:textSize="10sp"
+                    android:textColor="@color/text_hint" />
+
+            </LinearLayout>
+
+            <!-- Center FAB placeholder (actual FAB is below) -->
+            <View
+                android:id="@+id/fab_create"
+                android:layout_width="64dp"
+                android:layout_height="match_parent"
+                app:layout_constraintStart_toEndOf="@id/nav_community"
+                app:layout_constraintEnd_toStartOf="@id/nav_chat"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <!-- Chat -->
+            <LinearLayout
+                android:id="@+id/nav_chat"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:layout_constraintStart_toEndOf="@id/fab_create"
+                app:layout_constraintEnd_toStartOf="@id/nav_profile"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <ImageView
+                    android:id="@+id/iv_chat"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_chat"
+                    android:contentDescription="@string/nav_chat"
+                    app:tint="@color/text_hint" />
+                <TextView
+                    android:id="@+id/tv_nav_chat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/nav_chat"
+                    android:textSize="10sp"
+                    android:textColor="@color/text_hint" />
+
+            </LinearLayout>
+
+            <!-- Profile -->
+            <LinearLayout
+                android:id="@+id/nav_profile"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:layout_constraintStart_toEndOf="@id/nav_chat"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <ImageView
+                    android:id="@+id/iv_profile"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_person"
+                    android:contentDescription="@string/nav_profile"
+                    app:tint="@color/text_hint" />
+                <TextView
+                    android:id="@+id/tv_nav_profile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/nav_profile"
+                    android:textSize="10sp"
+                    android:textColor="@color/text_hint" />
+
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── Center Create FAB (floats above bottom nav) ────────────────── -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_create_btn"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="20dp"
+        android:src="@drawable/ic_add"
+        android:contentDescription="@string/fab_create"
+        app:backgroundTint="@color/brand_primary"
+        app:tint="@color/white"
+        app:elevation="6dp"
+        app:fabSize="normal"
+        app:shapeAppearance="@style/ShapeAppearance.AIFoodApp.Pill" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

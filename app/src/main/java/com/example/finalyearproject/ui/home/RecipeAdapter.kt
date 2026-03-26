@@ -10,174 +10,183 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.finalyearproject.R
 import com.example.finalyearproject.data.model.Recipe
 import com.example.finalyearproject.databinding.ItemRecipeCardBinding
+import com.example.finalyearproject.databinding.ItemRecipeCardHorizontalBinding
 import java.util.Locale
 
 /**
- * RecipeAdapter — Day 5
+ * RecipeAdapter — supports both vertical feed and horizontal scroll modes.
  *
- * ListAdapter with DiffUtil for efficient partial updates.
- * Uses ViewBinding — no findViewById.
- * Glide handles image loading with cross-fade transition.
- *
- * Usage:
- *   val adapter = RecipeAdapter(
- *       onRecipeClick = { recipe -> navigateToDetail(recipe) },
- *       onFavoriteClick = { recipe -> viewModel.toggleFavorite(recipe) }
- *   )
- *   binding.rvRecipes.adapter = adapter
- *   adapter.submitList(recipes)
+ * @param horizontal  true = compact horizontal card (160dp wide)
+ *                    false = full-width vertical card
  */
 class RecipeAdapter(
     private val onRecipeClick: (Recipe) -> Unit,
-    private val onFavoriteClick: (Recipe) -> Unit
-) : ListAdapter<Recipe, RecipeAdapter.RecipeViewHolder>(RecipeDiffCallback()) {
+    private val onFavoriteClick: (Recipe) -> Unit,
+    private val horizontal: Boolean = false
+) : ListAdapter<Recipe, RecyclerView.ViewHolder>(RecipeDiffCallback()) {
 
-    // Track favorited IDs for icon toggle without full rebind
-    private val favoritedIds = mutableSetOf<String>()
+    private val VIEW_VERTICAL   = 0
+    private val VIEW_HORIZONTAL = 1
 
-    fun setFavoritedIds(ids: Set<String>) {
-        val changed = ids != favoritedIds
-        favoritedIds.clear()
-        favoritedIds.addAll(ids)
-        if (changed) notifyItemRangeChanged(0, itemCount, PAYLOAD_FAVORITE)
+    private val likedIds  = mutableSetOf<String>()
+
+    fun setLikedIds(ids: Set<String>) {
+        val changed = ids != likedIds
+        likedIds.clear()
+        likedIds.addAll(ids)
+        if (changed) notifyItemRangeChanged(0, itemCount, PAYLOAD_LIKED)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecipeViewHolder {
-        val binding = ItemRecipeCardBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
-        return RecipeViewHolder(binding)
+    override fun getItemViewType(position: Int) =
+        if (horizontal) VIEW_HORIZONTAL else VIEW_VERTICAL
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return if (viewType == VIEW_HORIZONTAL) {
+            HorizontalViewHolder(
+                ItemRecipeCardHorizontalBinding.inflate(inflater, parent, false)
+            )
+        } else {
+            VerticalViewHolder(
+                ItemRecipeCardBinding.inflate(inflater, parent, false)
+            )
+        }
     }
 
-    override fun onBindViewHolder(holder: RecipeViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val recipe = getItem(position)
+        when (holder) {
+            is VerticalViewHolder   -> holder.bind(recipe)
+            is HorizontalViewHolder -> holder.bind(recipe)
+        }
     }
 
     override fun onBindViewHolder(
-        holder: RecipeViewHolder,
-        position: Int,
-        payloads: MutableList<Any>
+        holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>
     ) {
-        if (payloads.contains(PAYLOAD_FAVORITE)) {
-            holder.updateFavoriteIcon(favoritedIds.contains(getItem(position).recipeId))
+        if (payloads.contains(PAYLOAD_LIKED)) {
+            val recipe = getItem(position)
+            when (holder) {
+                is VerticalViewHolder   -> holder.updateFavoriteIcon(recipe.recipeId in likedIds)
+                is HorizontalViewHolder -> holder.updateFavoriteIcon(recipe.recipeId in likedIds)
+            }
         } else {
             super.onBindViewHolder(holder, position, payloads)
         }
     }
 
-    // ── ViewHolder ────────────────────────────────────────────────────────────
+    // ── Vertical ViewHolder ───────────────────────────────────────────────────
 
-    inner class RecipeViewHolder(
-        private val binding: ItemRecipeCardBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
+    inner class VerticalViewHolder(
+        private val b: ItemRecipeCardBinding
+    ) : RecyclerView.ViewHolder(b.root) {
 
         init {
-            binding.root.setOnClickListener {
-                val position = bindingAdapterPosition
-                if (position != RecyclerView.NO_ID.toInt()) {
-                    onRecipeClick(getItem(position))
-                }
+            b.root.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_ID.toInt()) onRecipeClick(getItem(pos))
             }
-            binding.btnFavorite.setOnClickListener {
-                val position = bindingAdapterPosition
-                if (position != RecyclerView.NO_ID.toInt()) {
-                    onFavoriteClick(getItem(position))
-                }
+            b.btnFavorite.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_ID.toInt()) onFavoriteClick(getItem(pos))
             }
         }
 
         fun bind(recipe: Recipe) {
-            with(binding) {
-                // Title
-                tvRecipeTitle.text = recipe.title
+            b.tvRecipeTitle.text   = recipe.title
+            b.chipCategory.text    = recipe.category.ifBlank { "Recipe" }
+            b.ratingBar.rating     = recipe.averageRating.toFloat()
+            b.tvRatingValue.text   = String.format(
+                Locale.getDefault(), "%.1f (%d)", recipe.averageRating, recipe.reviewCount)
+            b.tvAuthorName.text    = recipe.authorName.ifBlank { b.root.context.getString(R.string.label_unknown_author) }
+            b.tvCookTime.text      = formatTime(recipe.totalTimeMinutes)
+            b.chipDifficulty.text  = recipe.difficulty.lowercase().replaceFirstChar { it.uppercase() }
+            updateFavoriteIcon(recipe.recipeId in likedIds)
 
-                // Category chip
-                chipCategory.text = recipe.category.ifBlank { "Recipe" }
+            Glide.with(b.ivRecipeImage.context)
+                .load(recipe.imageUrl)
+                .placeholder(R.drawable.ic_recipe_placeholder)
+                .error(R.drawable.ic_recipe_placeholder)
+                .centerCrop()
+                .transition(DrawableTransitionOptions.withCrossFade(150))
+                .into(b.ivRecipeImage)
 
-                // Rating
-                ratingBar.rating = recipe.averageRating.toFloat()
-                tvRatingValue.text = String.format(
-                    Locale.getDefault(),
-                    "%.1f (%d)",
-                    recipe.averageRating,
-                    recipe.reviewCount
-                )
+            Glide.with(b.ivAuthorAvatar.context)
+                .load(recipe.authorImageUrl)
+                .placeholder(R.drawable.ic_avatar_placeholder)
+                .circleCrop()
+                .into(b.ivAuthorAvatar)
+        }
 
-                // Author
-                tvAuthorName.text = recipe.authorName.ifBlank {
-                    itemView.context.getString(R.string.label_unknown_author)
-                }
+        fun updateFavoriteIcon(liked: Boolean) {
+            b.btnFavorite.setIconResource(
+                if (liked) R.drawable.ic_favorite_filled else R.drawable.ic_favorite_outline)
+            b.btnFavorite.iconTint = b.root.context.getColorStateList(
+                if (liked) R.color.status_error else android.R.color.white)
+        }
+    }
 
-                // Cook time
-                tvCookTime.text = formatTime(recipe.totalTimeMinutes)
+    // ── Horizontal ViewHolder ─────────────────────────────────────────────────
 
-                // Difficulty chip
-                chipDifficulty.text = recipe.difficulty.name
-                    .lowercase()
-                    .replaceFirstChar { it.uppercase() }
+    inner class HorizontalViewHolder(
+        private val b: ItemRecipeCardHorizontalBinding
+    ) : RecyclerView.ViewHolder(b.root) {
 
-                // Favorite icon
-                updateFavoriteIcon(favoritedIds.contains(recipe.recipeId))
-
-                // Image — Glide with cross-fade
-                Glide.with(ivRecipeImage.context)
-                    .load(recipe.imageUrl)
-                    .placeholder(R.drawable.ic_recipe_placeholder)
-                    .error(R.drawable.ic_recipe_placeholder)
-                    .centerCrop()
-                    .transition(DrawableTransitionOptions.withCrossFade(200))
-                    .into(ivRecipeImage)
-
-                // Author avatar
-                Glide.with(ivAuthorAvatar.context)
-                    .load(recipe.authorImageUrl)
-                    .placeholder(R.drawable.ic_avatar_placeholder)
-                    .error(R.drawable.ic_avatar_placeholder)
-                    .circleCrop()
-                    .into(ivAuthorAvatar)
+        init {
+            b.root.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_ID.toInt()) onRecipeClick(getItem(pos))
+            }
+            b.btnFavorite.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_ID.toInt()) onFavoriteClick(getItem(pos))
             }
         }
 
-        fun updateFavoriteIcon(isFavorited: Boolean) {
-            binding.btnFavorite.setIconResource(
-                if (isFavorited) R.drawable.ic_favourite_filled
-                else R.drawable.ic_favourite_outline
-            )
-            binding.btnFavorite.iconTint = itemView.context.getColorStateList(
-                if (isFavorited) R.color.status_error
-                else android.R.color.white
-            )
+        fun bind(recipe: Recipe) {
+            b.tvRecipeTitle.text = recipe.title
+            b.tvCookTime.text    = formatTime(recipe.totalTimeMinutes)
+            b.tvLikeCount.text   = formatCount(recipe.likeCount)
+            updateFavoriteIcon(recipe.recipeId in likedIds)
+
+            Glide.with(b.ivRecipeImage.context)
+                .load(recipe.imageUrl)
+                .placeholder(R.drawable.ic_recipe_placeholder)
+                .error(R.drawable.ic_recipe_placeholder)
+                .centerCrop()
+                .transition(DrawableTransitionOptions.withCrossFade(150))
+                .into(b.ivRecipeImage)
         }
 
-        private fun formatTime(totalMinutes: Int): String {
-            if (totalMinutes <= 0) return "—"
-            return if (totalMinutes < 60) {
-                "${totalMinutes}m"
-            } else {
-                val hours = totalMinutes / 60
-                val mins = totalMinutes % 60
-                if (mins == 0) "${hours}h" else "${hours}h ${mins}m"
-            }
+        fun updateFavoriteIcon(liked: Boolean) {
+            b.btnFavorite.setIconResource(
+                if (liked) R.drawable.ic_favorite_filled else R.drawable.ic_favorite_outline)
+            b.btnFavorite.iconTint = b.root.context.getColorStateList(
+                if (liked) R.color.status_error else android.R.color.white)
         }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private fun formatTime(mins: Int): String = when {
+        mins <= 0  -> "—"
+        mins < 60  -> "${mins}m"
+        else       -> "${mins / 60}h ${mins % 60}m".trimEnd()
+    }
+
+    private fun formatCount(n: Int): String = when {
+        n >= 1000 -> String.format(Locale.getDefault(), "%.1fk", n / 1000.0)
+        else      -> n.toString()
     }
 
     // ── DiffCallback ──────────────────────────────────────────────────────────
 
-    private class RecipeDiffCallback : DiffUtil.ItemCallback<Recipe>() {
-        override fun areItemsTheSame(old: Recipe, new: Recipe) =
-            old.recipeId == new.recipeId
-
+    class RecipeDiffCallback : DiffUtil.ItemCallback<Recipe>() {
+        override fun areItemsTheSame(old: Recipe, new: Recipe) = old.recipeId == new.recipeId
         override fun areContentsTheSame(old: Recipe, new: Recipe) = old == new
-
-        override fun getChangePayload(old: Recipe, new: Recipe): Any? {
-            // Return a payload for favorite-only changes to avoid full rebind
-            return null
-        }
     }
 
     companion object {
-        private const val PAYLOAD_FAVORITE = "payload_favorite"
+        private const val PAYLOAD_LIKED = "liked"
     }
 }

@@ -1,11 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- ── App ──────────────────────────────────────────────────────────── -->
+    <!-- App -->
     <string name="app_name">FoodAI</string>
     <string name="login_tagline">Discover, cook, and share recipes</string>
 
-    <!-- ── Login ────────────────────────────────────────────────────────── -->
+    <!-- Bottom navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_community">Community</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_profile">Profile</string>
+    <string name="fab_create">Create</string>
+
+    <!-- Home sections -->
+    <string name="label_ai_recommended">Recommended for you</string>
+    <string name="label_trending">Trending now 🔥</string>
+    <string name="label_featured">Featured</string>
+    <string name="label_all_recipes">All Recipes</string>
+    <string name="btn_see_all">See all</string>
+    <string name="fab_ai">AI Assistant</string>
+
+    <!-- Home screen -->
+    <string name="greeting_default">Welcome back 👋</string>
+    <string name="home_title">What are you cooking today?</string>
+    <string name="hint_search">Search recipes, ingredients…</string>
+    <string name="category_all">All</string>
+    <string name="empty_recipes_title">No recipes found</string>
+    <string name="empty_recipes_sub">Try a different search or category</string>
+    <string name="label_unknown_author">Unknown</string>
+    <string name="view_detail">View Detail</string>
+
+    <!-- Login -->
     <string name="hint_email">Email address</string>
     <string name="hint_password">Password</string>
     <string name="hint_display_name">Your name</string>
@@ -18,25 +43,11 @@
     <string name="btn_create_account">Create Account</string>
     <string name="btn_google_sign_in">Continue with Google</string>
 
-    <!-- ── Register ─────────────────────────────────────────────────────── -->
+    <!-- Register -->
     <string name="register_title">Create Account</string>
     <string name="register_subtitle">Join our food community</string>
 
-    <!-- ── Home ─────────────────────────────────────────────────────────── -->
-    <string name="greeting_default">Welcome back 👋</string>
-    <string name="home_title">What are you cooking today?</string>
-    <string name="hint_search">Search recipes, ingredients…</string>
-    <string name="category_all">All</string>
-    <string name="label_featured">Featured</string>
-    <string name="label_all_recipes">All Recipes</string>
-    <string name="btn_see_all">See all</string>
-    <string name="fab_ai">AI Assistant</string>
-    <string name="empty_recipes_title">No recipes found</string>
-    <string name="empty_recipes_sub">Try a different search or category</string>
-    <string name="label_unknown_author">Unknown</string>
-    <string name="view_detail">View Detail</string>
-
-    <!-- ── Recipe Detail ────────────────────────────────────────────────── -->
+    <!-- Recipe Detail -->
     <string name="favorite">Favorite</string>
     <string name="buy">Buy Ingredients</string>
     <string name="label_ingredients">Ingredients</string>
@@ -47,20 +58,20 @@
     <string name="label_cook_time">Cook Time</string>
     <string name="label_servings">Servings</string>
 
-    <!-- ── Profile ──────────────────────────────────────────────────────── -->
+    <!-- Profile -->
     <string name="profile">Profile</string>
     <string name="btn_edit_profile">Edit Profile</string>
     <string name="label_my_recipes">My Recipes</string>
     <string name="label_my_favorites">My Favorites</string>
     <string name="btn_logout">Sign Out</string>
 
-    <!-- ── Payment ──────────────────────────────────────────────────────── -->
+    <!-- Payment -->
     <string name="payment">Payment</string>
     <string name="pay_now">Pay Now</string>
     <string name="label_order_summary">Order Summary</string>
     <string name="label_total">Total</string>
 
-    <!-- ── AI Chat ───────────────────────────────────────────────────────── -->
+    <!-- AI Chat -->
     <string name="ai_title">AI Food Assistant</string>
     <string name="ai_status_ready">Ready to help</string>
     <string name="ai_status_thinking">Thinking…</string>
@@ -69,35 +80,31 @@
     <string name="btn_show_recipe">Show Recipe</string>
     <string name="btn_nutrition">Nutrition Info</string>
 
-    <!-- ── Auth errors ───────────────────────────────────────────────────── -->
+    <!-- Auth errors -->
     <string name="error_email_empty">Please enter your email address</string>
     <string name="error_email_invalid">Please enter a valid email address</string>
     <string name="error_password_short">Password must be at least 6 characters</string>
     <string name="error_password_short_register">Password must be at least 8 characters</string>
     <string name="error_passwords_mismatch">Passwords do not match</string>
     <string name="error_display_name_short">Name must be at least 2 characters</string>
-    <string name="error_user_not_found">No account found with this email. Please register first.</string>
+    <string name="error_user_not_found">No account found. Please register first.</string>
     <string name="error_wrong_password">Incorrect password. Please try again.</string>
-    <string name="error_user_disabled">This account has been disabled. Contact support.</string>
-    <string name="error_too_many_requests">Too many failed attempts. Please try again later.</string>
-    <string name="error_email_already_used">This email is already registered. Please sign in instead.</string>
-
-    <!-- ── Google errors ─────────────────────────────────────────────────── -->
+    <string name="error_user_disabled">This account has been disabled.</string>
+    <string name="error_too_many_requests">Too many attempts. Please try again later.</string>
+    <string name="error_email_already_used">Email already registered. Please sign in.</string>
     <string name="error_google_sign_in">Google sign-in failed. Please try again.</string>
-    <string name="error_google_register_first">No account found for this Google account. Please register first.</string>
-    <string name="error_google_sha1">Google sign-in is not configured yet. Contact the developer.</string>
-
-    <!-- ── General errors ───────────────────────────────────────────────── -->
-    <string name="error_network">No internet connection. Please try again.</string>
+    <string name="error_google_register_first">No account for this Google email. Please register.</string>
+    <string name="error_google_sha1">Google sign-in not configured. Contact developer.</string>
+    <string name="error_network">No internet connection.</string>
     <string name="error_generic">Something went wrong. Please try again.</string>
 
-    <!-- ── Success messages ──────────────────────────────────────────────── -->
-    <string name="msg_reset_email_sent">Password reset email sent. Check your inbox.</string>
-    <string name="msg_google_existing_account">Welcome back! Signed in with your existing account.</string>
+    <!-- Success -->
+    <string name="msg_reset_email_sent">Password reset email sent.</string>
+    <string name="msg_google_existing_account">Welcome back! Signed in with existing account.</string>
 
-    <!-- ── Content descriptions ─────────────────────────────────────────── -->
+    <!-- Content descriptions -->
     <string name="cd_recipe_image">Recipe image</string>
-    <string name="cd_author_avatar">Author profile picture</string>
+    <string name="cd_author_avatar">Author picture</string>
     <string name="cd_user_avatar">Your profile picture</string>
     <string name="cd_no_recipes">No recipes illustration</string>
 

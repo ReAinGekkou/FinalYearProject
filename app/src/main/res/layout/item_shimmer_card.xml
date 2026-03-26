@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="160dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- Image placeholder -->
+    <View
+        android:layout_width="160dp"
+        android:layout_height="110dp"
+        android:background="@color/shimmer_base" />
+
+    <!-- Title line -->
+    <View
+        android:layout_width="120dp"
+        android:layout_height="14dp"
+        android:layout_marginTop="8dp"
+        android:background="@color/shimmer_base" />
+
+    <!-- Subtitle line -->
+    <View
+        android:layout_width="80dp"
+        android:layout_height="10dp"
+        android:layout_marginTop="6dp"
+        android:background="@color/shimmer_base" />
+
+</LinearLayout>
