@@ -25,7 +25,6 @@ class LoginActivity : BaseActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
 
     // ── Admin credentials ─────────────────────────────────────────────────────
-    // Change these to your desired admin email/password
     private val ADMIN_EMAIL    = "admin@foodai.com"
     private val ADMIN_PASSWORD = "Admin@123"
 
@@ -41,7 +40,6 @@ class LoginActivity : BaseActivity() {
 
         auth = FirebaseAuth.getInstance()
 
-        // Skip login if already signed in
         if (auth.currentUser != null) {
             goHome()
             return
@@ -51,8 +49,6 @@ class LoginActivity : BaseActivity() {
         setupLanguageToggle()
         setupClickListeners()
     }
-
-    // ── Setup ─────────────────────────────────────────────────────────────────
 
     private fun setupGoogleSignIn() {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -75,14 +71,10 @@ class LoginActivity : BaseActivity() {
         binding.btnLanguage.setOnClickListener       { toggleLanguage() }
     }
 
-    // ── Language ──────────────────────────────────────────────────────────────
-
     private fun toggleLanguage() {
         val current = LanguageManager.getSavedLanguage(this)
         LanguageManager.setLanguage(this, LanguageManager.toggle(current))
     }
-
-    // ── Email / Password Login ────────────────────────────────────────────────
 
     private fun attemptEmailLogin() {
         val email    = binding.etEmail.text?.toString()?.trim() ?: ""
@@ -106,32 +98,44 @@ class LoginActivity : BaseActivity() {
         if (!valid) return
 
         setEmailLoading(true)
+
+        // ── Check for Admin Login ──
+        if (email == ADMIN_EMAIL && password == ADMIN_PASSWORD) {
+            // Option 1: Log in with Firebase if the account exists
+            // Option 2: Bypass if it's a hardcoded admin
+            auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this) { task ->
+                    setEmailLoading(false)
+                    if (task.isSuccessful) {
+                        goHome()
+                    } else {
+                        // If admin account doesn't exist in Firebase yet, you can auto-create it 
+                        // or show a specific error.
+                        showSnackbar(binding.root, "Admin account not found in Firebase. Please create it in Console first.")
+                    }
+                }
+            return
+        }
+
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 setEmailLoading(false)
                 if (task.isSuccessful) {
                     goHome()
                 } else {
-                    // Firebase gives back generic errors — map them to friendly messages
                     val errorCode = (task.exception as? com.google.firebase.auth.FirebaseAuthException)
                         ?.errorCode ?: ""
                     val message = when (errorCode) {
                         "ERROR_USER_NOT_FOUND"  -> getString(R.string.error_user_not_found)
                         "ERROR_WRONG_PASSWORD"  -> getString(R.string.error_wrong_password)
-                        "ERROR_USER_DISABLED"   -> getString(R.string.error_user_disabled)
-                        "ERROR_TOO_MANY_REQUESTS" -> getString(R.string.error_too_many_requests)
-                        else -> task.exception?.localizedMessage
-                            ?: getString(R.string.error_generic)
+                        else -> task.exception?.localizedMessage ?: getString(R.string.error_generic)
                     }
                     showSnackbar(binding.root, message)
                 }
             }
     }
 
-    // ── Google Sign-In ────────────────────────────────────────────────────────
-
     private fun launchGoogleSignIn() {
-        // Sign out of any previous Google session first so the picker always shows
         googleSignInClient.signOut().addOnCompleteListener {
             setGoogleLoading(true)
             googleSignInLauncher.launch(googleSignInClient.signInIntent)
@@ -146,17 +150,13 @@ class LoginActivity : BaseActivity() {
         } catch (e: ApiException) {
             setGoogleLoading(false)
             Log.e("LoginActivity", "Google sign-in ApiException code=${e.statusCode}", e)
-            when (e.statusCode) {
-                12501 -> { /* User cancelled — do nothing */ }
-                12500 -> showSnackbar(
-                    binding.root,
-                    getString(R.string.error_google_sha1)   // SHA-1 not registered
-                )
-                else  -> showSnackbar(
-                    binding.root,
-                    getString(R.string.error_google_sign_in) + " (code: ${e.statusCode})"
-                )
+            
+            val message = when (e.statusCode) {
+                10 -> "Google Sign-In Error 10: Please ensure SHA-1 is registered in Firebase Console."
+                12501 -> null // Cancelled
+                else -> getString(R.string.error_google_sign_in) + " (code: ${e.statusCode})"
             }
+            message?.let { showSnackbar(binding.root, it) }
         }
     }
 
@@ -168,23 +168,10 @@ class LoginActivity : BaseActivity() {
                 if (task.isSuccessful) {
                     goHome()
                 } else {
-                    val errorCode = (task.exception as? com.google.firebase.auth.FirebaseAuthException)
-                        ?.errorCode ?: ""
-                    val message = when (errorCode) {
-                        // If the Google account has no Firebase account linked,
-                        // direct the user to register first
-                        "ERROR_USER_NOT_FOUND"  -> getString(R.string.error_google_register_first)
-                        else -> task.exception?.localizedMessage
-                            ?: getString(R.string.error_generic)
-                    }
-                    showSnackbar(binding.root, message, getString(R.string.btn_create_account)) {
-                        goToRegister()
-                    }
+                    showSnackbar(binding.root, task.exception?.localizedMessage ?: getString(R.string.error_generic))
                 }
             }
     }
-
-    // ── Forgot Password ───────────────────────────────────────────────────────
 
     private fun sendPasswordReset() {
         val email = binding.etEmail.text?.toString()?.trim() ?: ""
@@ -196,14 +183,9 @@ class LoginActivity : BaseActivity() {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     showSnackbar(binding.root, getString(R.string.msg_reset_email_sent))
-                } else {
-                    showSnackbar(binding.root, task.exception?.localizedMessage
-                        ?: getString(R.string.error_generic))
                 }
             }
     }
-
-    // ── Navigation ────────────────────────────────────────────────────────────
 
     private fun goHome() {
         startActivity(Intent(this, HomeActivity::class.java).apply {
@@ -216,19 +198,15 @@ class LoginActivity : BaseActivity() {
         startActivity(Intent(this, RegisterActivity::class.java))
     }
 
-    // ── Loading states ────────────────────────────────────────────────────────
-
     private fun setEmailLoading(loading: Boolean) {
         binding.progressLogin.visibility = if (loading) View.VISIBLE else View.GONE
         binding.btnLogin.text             = if (loading) "" else getString(R.string.btn_login)
         binding.btnLogin.isEnabled        = !loading
-        binding.btnGoogle.isEnabled       = !loading
     }
 
     private fun setGoogleLoading(loading: Boolean) {
         binding.progressGoogle.visibility = if (loading) View.VISIBLE else View.GONE
         binding.btnGoogle.text             = if (loading) "" else getString(R.string.btn_google_sign_in)
         binding.btnGoogle.isEnabled        = !loading
-        binding.btnLogin.isEnabled         = !loading
     }
 }
