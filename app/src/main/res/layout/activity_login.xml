@@ -1,11 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    activity_login.xml
-    • ScrollView ensures fields are visible above keyboard on any screen size
-    • Language switch (EN|VI) sits top-right as a text toggle
-    • Google Sign-In button sits below the OR divider
-    • All touch targets ≥ 48 dp
--->
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -32,11 +25,8 @@
             android:text="VI"
             android:textColor="@color/brand_primary"
             android:textSize="13sp"
-            android:fontFamily="sans-serif-medium"
-            app:rippleColor="@color/brand_primary_surface"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            tools:text="VI" />
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <!-- ── Logo ───────────────────────────────────────────────────────── -->
         <ImageView
@@ -94,6 +84,8 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusBottomEnd="12dp"
+            app:boxStrokeColor="@color/brand_primary"
+            app:hintTextColor="@color/brand_primary"
             app:layout_constraintTop_toBottomOf="@id/tv_tagline"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
@@ -105,6 +97,8 @@
                 android:inputType="textEmailAddress"
                 android:imeOptions="actionNext"
                 android:autofillHints="emailAddress"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
                 android:textSize="15sp"
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp" />
@@ -128,6 +122,8 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusBottomEnd="12dp"
+            app:boxStrokeColor="@color/brand_primary"
+            app:hintTextColor="@color/brand_primary"
             app:layout_constraintTop_toBottomOf="@id/til_email"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
@@ -139,6 +135,8 @@
                 android:inputType="textPassword"
                 android:imeOptions="actionDone"
                 android:autofillHints="password"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
                 android:textSize="15sp"
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp" />
@@ -156,7 +154,6 @@
             android:text="@string/forgot_password"
             android:textSize="13sp"
             android:textColor="@color/brand_primary"
-            android:paddingStart="0dp"
             app:layout_constraintTop_toBottomOf="@id/til_password"
             app:layout_constraintEnd_toEndOf="parent" />
 
@@ -170,7 +167,6 @@
             android:text="@string/btn_login"
             android:textSize="16sp"
             android:textColor="@color/white"
-            android:fontFamily="sans-serif-medium"
             app:backgroundTint="@color/brand_primary"
             app:cornerRadius="12dp"
             android:stateListAnimator="@null"
@@ -179,7 +175,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- ── Progress (overlaid on login button) ────────────────────────── -->
+        <!-- Progress on login button -->
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_login"
             android:layout_width="wrap_content"
@@ -187,7 +183,6 @@
             android:visibility="gone"
             app:indicatorColor="@color/white"
             app:indicatorSize="24dp"
-            app:trackColor="@color/brand_primary_light"
             app:layout_constraintTop_toTopOf="@id/btn_login"
             app:layout_constraintBottom_toBottomOf="@id/btn_login"
             app:layout_constraintStart_toStartOf="@id/btn_login"
@@ -250,7 +245,6 @@
             android:text="@string/btn_google_sign_in"
             android:textSize="15sp"
             android:textColor="@color/text_primary"
-            android:fontFamily="sans-serif-medium"
             app:icon="@drawable/ic_google"
             app:iconSize="20dp"
             app:iconGravity="textStart"
@@ -264,7 +258,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- ── Progress (Google button) ──────────────────────────────────── -->
+        <!-- Progress on Google button -->
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_google"
             android:layout_width="wrap_content"
@@ -299,7 +293,6 @@
             android:text="@string/btn_create_account"
             android:textSize="14sp"
             android:textColor="@color/brand_primary"
-            android:fontFamily="sans-serif-medium"
             app:layout_constraintTop_toBottomOf="@id/tv_no_account"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />

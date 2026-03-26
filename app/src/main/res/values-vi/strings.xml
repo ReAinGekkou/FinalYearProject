@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Place at: res/values-vi/strings.xml -->
+<!-- res/values-vi/strings.xml -->
 <resources>
 
-    <!-- ── App ─────────────────────────────────────────────────────────── -->
     <string name="app_name">FoodAI</string>
     <string name="login_tagline">Khám phá, nấu ăn và chia sẻ công thức</string>
-
-    <!-- ── Login ───────────────────────────────────────────────────────── -->
     <string name="hint_email">Địa chỉ email</string>
     <string name="hint_password">Mật khẩu</string>
     <string name="hint_display_name">Tên của bạn</string>
@@ -18,12 +15,8 @@
     <string name="have_account">Đã có tài khoản?</string>
     <string name="btn_create_account">Tạo Tài Khoản</string>
     <string name="btn_google_sign_in">Tiếp tục với Google</string>
-
-    <!-- ── Register ────────────────────────────────────────────────────── -->
     <string name="register_title">Tạo Tài Khoản</string>
     <string name="register_subtitle">Tham gia cộng đồng ẩm thực</string>
-
-    <!-- ── Home ────────────────────────────────────────────────────────── -->
     <string name="greeting_default">Chào mừng trở lại 👋</string>
     <string name="home_title">Hôm nay bạn nấu gì?</string>
     <string name="hint_search">Tìm công thức, nguyên liệu…</string>
@@ -36,8 +29,6 @@
     <string name="empty_recipes_sub">Thử từ khóa hoặc danh mục khác</string>
     <string name="label_unknown_author">Không rõ</string>
     <string name="view_detail">Xem chi tiết</string>
-
-    <!-- ── Recipe Detail ───────────────────────────────────────────────── -->
     <string name="favorite">Yêu thích</string>
     <string name="buy">Mua nguyên liệu</string>
     <string name="label_ingredients">Nguyên liệu</string>
@@ -47,21 +38,15 @@
     <string name="label_prep_time">Chuẩn bị</string>
     <string name="label_cook_time">Nấu</string>
     <string name="label_servings">Khẩu phần</string>
-
-    <!-- ── Profile ─────────────────────────────────────────────────────── -->
     <string name="profile">Hồ sơ</string>
     <string name="btn_edit_profile">Chỉnh sửa hồ sơ</string>
     <string name="label_my_recipes">Công thức của tôi</string>
     <string name="label_my_favorites">Yêu thích</string>
     <string name="btn_logout">Đăng Xuất</string>
-
-    <!-- ── Payment ─────────────────────────────────────────────────────── -->
     <string name="payment">Thanh toán</string>
     <string name="pay_now">Thanh toán ngay</string>
     <string name="label_order_summary">Tóm tắt đơn hàng</string>
     <string name="label_total">Tổng cộng</string>
-
-    <!-- ── AI Chat ─────────────────────────────────────────────────────── -->
     <string name="ai_title">Trợ lý AI Ẩm thực</string>
     <string name="ai_status_ready">Sẵn sàng hỗ trợ</string>
     <string name="ai_status_thinking">Đang suy nghĩ…</string>
@@ -69,27 +54,27 @@
     <string name="ai_suggestions_label">Thử hỏi:</string>
     <string name="btn_show_recipe">Xem Công Thức</string>
     <string name="btn_nutrition">Thông tin dinh dưỡng</string>
-
-    <!-- ── Errors ───────────────────────────────────────────────────────── -->
     <string name="error_email_empty">Vui lòng nhập địa chỉ email</string>
     <string name="error_email_invalid">Vui lòng nhập email hợp lệ</string>
     <string name="error_password_short">Mật khẩu phải có ít nhất 6 ký tự</string>
     <string name="error_password_short_register">Mật khẩu phải có ít nhất 8 ký tự</string>
     <string name="error_passwords_mismatch">Mật khẩu không khớp</string>
     <string name="error_display_name_short">Tên phải có ít nhất 2 ký tự</string>
+    <string name="error_user_not_found">Không tìm thấy tài khoản với email này. Vui lòng đăng ký trước.</string>
+    <string name="error_wrong_password">Sai mật khẩu. Vui lòng thử lại.</string>
+    <string name="error_user_disabled">Tài khoản này đã bị vô hiệu hóa. Liên hệ hỗ trợ.</string>
+    <string name="error_too_many_requests">Quá nhiều lần thử. Vui lòng thử lại sau.</string>
+    <string name="error_email_already_used">Email này đã được đăng ký. Vui lòng đăng nhập.</string>
+    <string name="error_google_sign_in">Đăng nhập Google thất bại. Vui lòng thử lại.</string>
+    <string name="error_google_register_first">Không tìm thấy tài khoản Google này. Vui lòng đăng ký trước.</string>
+    <string name="error_google_sha1">Google Sign-In chưa được cấu hình. Liên hệ nhà phát triển.</string>
     <string name="error_network">Không có kết nối internet. Vui lòng thử lại.</string>
     <string name="error_generic">Đã xảy ra lỗi. Vui lòng thử lại.</string>
-    <string name="error_google_sign_in">Đăng nhập Google thất bại. Vui lòng thử lại.</string>
-
-    <!-- ── Success ──────────────────────────────────────────────────────── -->
     <string name="msg_reset_email_sent">Email đặt lại mật khẩu đã được gửi. Kiểm tra hộp thư.</string>
-
-    <!-- ── Content descriptions ────────────────────────────────────────── -->
+    <string name="msg_google_existing_account">Chào mừng trở lại! Đã đăng nhập bằng tài khoản hiện có.</string>
     <string name="cd_recipe_image">Hình ảnh công thức</string>
     <string name="cd_author_avatar">Ảnh đại diện tác giả</string>
     <string name="cd_user_avatar">Ảnh đại diện của bạn</string>
     <string name="cd_no_recipes">Minh họa không có công thức</string>
-
-    <string name="default_web_client_id">136920309757-81ofi7432atv0n0frokcl9ej1spfecgq.apps.googleusercontent.com</string>
 
 </resources>

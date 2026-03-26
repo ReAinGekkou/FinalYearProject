@@ -2,6 +2,7 @@ package com.example.finalyearproject.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,13 +24,15 @@ class LoginActivity : BaseActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
 
-    // ── Activity Result launcher replaces deprecated onActivityResult ─────────
+    // ── Admin credentials ─────────────────────────────────────────────────────
+    // Change these to your desired admin email/password
+    private val ADMIN_EMAIL    = "admin@foodai.com"
+    private val ADMIN_PASSWORD = "Admin@123"
+
     private val googleSignInLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
             handleGoogleSignInResult(result)
         }
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,8 +55,6 @@ class LoginActivity : BaseActivity() {
     // ── Setup ─────────────────────────────────────────────────────────────────
 
     private fun setupGoogleSignIn() {
-        // web_client_id must match the OAuth 2.0 Web Client ID in your
-        // Firebase Console → Authentication → Sign-in method → Google → Web client ID
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
@@ -63,25 +64,22 @@ class LoginActivity : BaseActivity() {
 
     private fun setupLanguageToggle() {
         val current = LanguageManager.getSavedLanguage(this)
-        // Show the language user can SWITCH TO
         binding.btnLanguage.text = LanguageManager.toggleLabel(current)
     }
 
     private fun setupClickListeners() {
-        binding.btnLogin.setOnClickListener { attemptEmailLogin() }
-        binding.btnGoogle.setOnClickListener { launchGoogleSignIn() }
-        binding.btnRegister.setOnClickListener { goToRegister() }
+        binding.btnLogin.setOnClickListener          { attemptEmailLogin() }
+        binding.btnGoogle.setOnClickListener         { launchGoogleSignIn() }
+        binding.btnRegister.setOnClickListener       { goToRegister() }
         binding.btnForgotPassword.setOnClickListener { sendPasswordReset() }
-        binding.btnLanguage.setOnClickListener { toggleLanguage() }
+        binding.btnLanguage.setOnClickListener       { toggleLanguage() }
     }
 
     // ── Language ──────────────────────────────────────────────────────────────
 
     private fun toggleLanguage() {
         val current = LanguageManager.getSavedLanguage(this)
-        val next = LanguageManager.toggle(current)
-        // saveLanguage + recreate() → locale applied via attachBaseContext on recreate
-        LanguageManager.setLanguage(this, next)
+        LanguageManager.setLanguage(this, LanguageManager.toggle(current))
     }
 
     // ── Email / Password Login ────────────────────────────────────────────────
@@ -90,11 +88,9 @@ class LoginActivity : BaseActivity() {
         val email    = binding.etEmail.text?.toString()?.trim() ?: ""
         val password = binding.etPassword.text?.toString() ?: ""
 
-        // Clear previous errors
         binding.tilEmail.error    = null
         binding.tilPassword.error = null
 
-        // Validate
         var valid = true
         if (email.isEmpty()) {
             binding.tilEmail.error = getString(R.string.error_email_empty)
@@ -103,7 +99,7 @@ class LoginActivity : BaseActivity() {
             binding.tilEmail.error = getString(R.string.error_email_invalid)
             valid = false
         }
-        if (password.length < 6) {
+        if (password.isEmpty()) {
             binding.tilPassword.error = getString(R.string.error_password_short)
             valid = false
         }
@@ -116,9 +112,18 @@ class LoginActivity : BaseActivity() {
                 if (task.isSuccessful) {
                     goHome()
                 } else {
-                    val msg = task.exception?.localizedMessage
-                        ?: getString(R.string.error_generic)
-                    showSnackbar(binding.root, msg)
+                    // Firebase gives back generic errors — map them to friendly messages
+                    val errorCode = (task.exception as? com.google.firebase.auth.FirebaseAuthException)
+                        ?.errorCode ?: ""
+                    val message = when (errorCode) {
+                        "ERROR_USER_NOT_FOUND"  -> getString(R.string.error_user_not_found)
+                        "ERROR_WRONG_PASSWORD"  -> getString(R.string.error_wrong_password)
+                        "ERROR_USER_DISABLED"   -> getString(R.string.error_user_disabled)
+                        "ERROR_TOO_MANY_REQUESTS" -> getString(R.string.error_too_many_requests)
+                        else -> task.exception?.localizedMessage
+                            ?: getString(R.string.error_generic)
+                    }
+                    showSnackbar(binding.root, message)
                 }
             }
     }
@@ -126,22 +131,31 @@ class LoginActivity : BaseActivity() {
     // ── Google Sign-In ────────────────────────────────────────────────────────
 
     private fun launchGoogleSignIn() {
-        setGoogleLoading(true)
-        val signInIntent = googleSignInClient.signInIntent
-        googleSignInLauncher.launch(signInIntent)
+        // Sign out of any previous Google session first so the picker always shows
+        googleSignInClient.signOut().addOnCompleteListener {
+            setGoogleLoading(true)
+            googleSignInLauncher.launch(googleSignInClient.signInIntent)
+        }
     }
 
     private fun handleGoogleSignInResult(result: ActivityResult) {
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
             val account = task.getResult(ApiException::class.java)
-            // Got Google account — now authenticate with Firebase
             firebaseAuthWithGoogle(account.idToken!!)
         } catch (e: ApiException) {
             setGoogleLoading(false)
-            if (e.statusCode != 12501) {
-                // 12501 = user cancelled — don't show error for that
-                showSnackbar(binding.root, getString(R.string.error_google_sign_in))
+            Log.e("LoginActivity", "Google sign-in ApiException code=${e.statusCode}", e)
+            when (e.statusCode) {
+                12501 -> { /* User cancelled — do nothing */ }
+                12500 -> showSnackbar(
+                    binding.root,
+                    getString(R.string.error_google_sha1)   // SHA-1 not registered
+                )
+                else  -> showSnackbar(
+                    binding.root,
+                    getString(R.string.error_google_sign_in) + " (code: ${e.statusCode})"
+                )
             }
         }
     }
@@ -154,9 +168,18 @@ class LoginActivity : BaseActivity() {
                 if (task.isSuccessful) {
                     goHome()
                 } else {
-                    val msg = task.exception?.localizedMessage
-                        ?: getString(R.string.error_generic)
-                    showSnackbar(binding.root, msg)
+                    val errorCode = (task.exception as? com.google.firebase.auth.FirebaseAuthException)
+                        ?.errorCode ?: ""
+                    val message = when (errorCode) {
+                        // If the Google account has no Firebase account linked,
+                        // direct the user to register first
+                        "ERROR_USER_NOT_FOUND"  -> getString(R.string.error_google_register_first)
+                        else -> task.exception?.localizedMessage
+                            ?: getString(R.string.error_generic)
+                    }
+                    showSnackbar(binding.root, message, getString(R.string.btn_create_account)) {
+                        goToRegister()
+                    }
                 }
             }
     }
@@ -183,7 +206,9 @@ class LoginActivity : BaseActivity() {
     // ── Navigation ────────────────────────────────────────────────────────────
 
     private fun goHome() {
-        startActivity(Intent(this, HomeActivity::class.java))
+        startActivity(Intent(this, HomeActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
         finish()
     }
 
@@ -193,21 +218,13 @@ class LoginActivity : BaseActivity() {
 
     // ── Loading states ────────────────────────────────────────────────────────
 
-    /**
-     * Shows spinner on the Email/Password login button.
-     * Hides button text and disables Google button to prevent double-tap.
-     */
     private fun setEmailLoading(loading: Boolean) {
-        binding.progressLogin.visibility  = if (loading) View.VISIBLE else View.GONE
-        binding.btnLogin.text              = if (loading) "" else getString(R.string.btn_login)
-        binding.btnLogin.isEnabled         = !loading
-        binding.btnGoogle.isEnabled        = !loading
+        binding.progressLogin.visibility = if (loading) View.VISIBLE else View.GONE
+        binding.btnLogin.text             = if (loading) "" else getString(R.string.btn_login)
+        binding.btnLogin.isEnabled        = !loading
+        binding.btnGoogle.isEnabled       = !loading
     }
 
-    /**
-     * Shows spinner on the Google button.
-     * Disables email button to prevent double-tap.
-     */
     private fun setGoogleLoading(loading: Boolean) {
         binding.progressGoogle.visibility = if (loading) View.VISIBLE else View.GONE
         binding.btnGoogle.text             = if (loading) "" else getString(R.string.btn_google_sign_in)

@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    activity_register.xml
-    Same structure as login for visual consistency.
-    Adds: Display Name field + Confirm Password field.
--->
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_screen"
@@ -30,11 +24,8 @@
             android:text="VI"
             android:textColor="@color/brand_primary"
             android:textSize="13sp"
-            android:fontFamily="sans-serif-medium"
-            app:rippleColor="@color/brand_primary_surface"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            tools:text="VI" />
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <!-- ── Header ─────────────────────────────────────────────────────── -->
         <TextView
@@ -78,6 +69,8 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusBottomEnd="12dp"
+            app:boxStrokeColor="@color/brand_primary"
+            app:hintTextColor="@color/brand_primary"
             app:layout_constraintTop_toBottomOf="@id/tv_subtitle"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
@@ -89,6 +82,8 @@
                 android:inputType="textPersonName|textCapWords"
                 android:imeOptions="actionNext"
                 android:autofillHints="name"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
                 android:textSize="15sp"
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp" />
@@ -111,6 +106,8 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusBottomEnd="12dp"
+            app:boxStrokeColor="@color/brand_primary"
+            app:hintTextColor="@color/brand_primary"
             app:layout_constraintTop_toBottomOf="@id/til_display_name"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
@@ -122,6 +119,8 @@
                 android:inputType="textEmailAddress"
                 android:imeOptions="actionNext"
                 android:autofillHints="emailAddress"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
                 android:textSize="15sp"
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp" />
@@ -145,6 +144,8 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusBottomEnd="12dp"
+            app:boxStrokeColor="@color/brand_primary"
+            app:hintTextColor="@color/brand_primary"
             app:layout_constraintTop_toBottomOf="@id/til_email"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
@@ -156,6 +157,8 @@
                 android:inputType="textPassword"
                 android:imeOptions="actionNext"
                 android:autofillHints="newPassword"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
                 android:textSize="15sp"
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp" />
@@ -179,6 +182,8 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusBottomEnd="12dp"
+            app:boxStrokeColor="@color/brand_primary"
+            app:hintTextColor="@color/brand_primary"
             app:layout_constraintTop_toBottomOf="@id/til_password"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
@@ -190,6 +195,8 @@
                 android:inputType="textPassword"
                 android:imeOptions="actionDone"
                 android:autofillHints="newPassword"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
                 android:textSize="15sp"
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp" />
@@ -206,7 +213,6 @@
             android:text="@string/btn_create_account"
             android:textSize="16sp"
             android:textColor="@color/white"
-            android:fontFamily="sans-serif-medium"
             app:backgroundTint="@color/brand_primary"
             app:cornerRadius="12dp"
             android:stateListAnimator="@null"
@@ -223,7 +229,6 @@
             android:visibility="gone"
             app:indicatorColor="@color/white"
             app:indicatorSize="24dp"
-            app:trackColor="@color/brand_primary_light"
             app:layout_constraintTop_toTopOf="@id/btn_register"
             app:layout_constraintBottom_toBottomOf="@id/btn_register"
             app:layout_constraintStart_toStartOf="@id/btn_register"
@@ -286,7 +291,6 @@
             android:text="@string/btn_google_sign_in"
             android:textSize="15sp"
             android:textColor="@color/text_primary"
-            android:fontFamily="sans-serif-medium"
             app:icon="@drawable/ic_google"
             app:iconSize="20dp"
             app:iconGravity="textStart"
@@ -335,7 +339,6 @@
             android:text="@string/btn_login"
             android:textSize="14sp"
             android:textColor="@color/brand_primary"
-            android:fontFamily="sans-serif-medium"
             app:layout_constraintTop_toBottomOf="@id/tv_have_account"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
