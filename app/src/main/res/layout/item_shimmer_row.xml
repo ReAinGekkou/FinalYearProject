@@ -5,7 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <!-- Image -->
     <View
         android:id="@+id/shimmer_image"
         android:layout_width="0dp"
@@ -16,7 +15,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Title -->
     <View
         android:id="@+id/shimmer_title"
         android:layout_width="0dp"
@@ -28,7 +26,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Subtitle -->
     <View
         android:id="@+id/shimmer_sub"
         android:layout_width="0dp"

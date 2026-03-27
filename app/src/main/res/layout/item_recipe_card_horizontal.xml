@@ -14,10 +14,10 @@
     app:cardBackgroundColor="@color/bg_card">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- Recipe image -->
         <ImageView
             android:id="@+id/iv_recipe_image"
             android:layout_width="0dp"
@@ -30,23 +30,21 @@
             app:layout_constraintEnd_toEndOf="parent"
             tools:src="@tools:sample/backgrounds/scenic" />
 
-        <!-- Favorite button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_favorite"
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:padding="6dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
             app:icon="@drawable/ic_favorite_outline"
             app:iconTint="@color/white"
             app:iconSize="18dp"
             app:iconPadding="0dp"
-            android:minWidth="0dp"
-            android:minHeight="0dp"
             app:layout_constraintTop_toTopOf="@id/iv_recipe_image"
             app:layout_constraintEnd_toEndOf="@id/iv_recipe_image" />
 
-        <!-- Title -->
         <TextView
             android:id="@+id/tv_recipe_title"
             android:layout_width="0dp"
@@ -63,7 +61,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="Phở Bò Hà Nội" />
 
-        <!-- Cook time + likes row -->
         <LinearLayout
             android:id="@+id/row_meta"
             android:layout_width="0dp"

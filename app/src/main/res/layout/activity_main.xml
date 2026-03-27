@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    activity_main.xml
-    Bottom navigation: Home | Community | [FAB Create] | Chat | Profile
-    FragmentContainerView hosts each tab's fragment.
+    activity_main.xml — FIXED
+    Removed NavHostFragment (requires nav graph + Navigation dependency).
+    Uses a plain FrameLayout fragment container instead.
+    MainActivity.kt manages fragments manually — no nav graph needed.
 -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -11,17 +12,13 @@
     android:layout_height="match_parent"
     android:background="@color/bg_screen">
 
-    <!-- ── Fragment host ───────────────────────────────────────────────── -->
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/nav_host_fragment"
-        android:name="androidx.navigation.fragment.NavHostFragment"
+    <!-- ── Fragment host — plain FrameLayout, no nav graph needed ─────── -->
+    <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:defaultNavHost="true"
-        app:navGraph="@navigation/nav_graph"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+        android:layout_height="match_parent" />
 
-    <!-- ── Bottom navigation background card ─────────────────────────── -->
+    <!-- ── Bottom navigation bar ──────────────────────────────────────── -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_bottom_nav"
         android:layout_width="match_parent"
@@ -58,6 +55,7 @@
                     android:src="@drawable/ic_home"
                     android:contentDescription="@string/nav_home"
                     app:tint="@color/brand_primary" />
+
                 <TextView
                     android:id="@+id/tv_nav_home"
                     android:layout_width="wrap_content"
@@ -80,7 +78,7 @@
                 android:focusable="true"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 app:layout_constraintStart_toEndOf="@id/nav_home"
-                app:layout_constraintEnd_toStartOf="@id/fab_create"
+                app:layout_constraintEnd_toStartOf="@id/space_fab"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
@@ -91,6 +89,7 @@
                     android:src="@drawable/ic_community"
                     android:contentDescription="@string/nav_community"
                     app:tint="@color/text_hint" />
+
                 <TextView
                     android:id="@+id/tv_nav_community"
                     android:layout_width="wrap_content"
@@ -102,9 +101,9 @@
 
             </LinearLayout>
 
-            <!-- Center FAB placeholder (actual FAB is below) -->
+            <!-- Center space for FAB -->
             <View
-                android:id="@+id/fab_create"
+                android:id="@+id/space_fab"
                 android:layout_width="64dp"
                 android:layout_height="match_parent"
                 app:layout_constraintStart_toEndOf="@id/nav_community"
@@ -122,7 +121,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                app:layout_constraintStart_toEndOf="@id/fab_create"
+                app:layout_constraintStart_toEndOf="@id/space_fab"
                 app:layout_constraintEnd_toStartOf="@id/nav_profile"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
@@ -134,6 +133,7 @@
                     android:src="@drawable/ic_chat"
                     android:contentDescription="@string/nav_chat"
                     app:tint="@color/text_hint" />
+
                 <TextView
                     android:id="@+id/tv_nav_chat"
                     android:layout_width="wrap_content"
@@ -167,6 +167,7 @@
                     android:src="@drawable/ic_person"
                     android:contentDescription="@string/nav_profile"
                     app:tint="@color/text_hint" />
+
                 <TextView
                     android:id="@+id/tv_nav_profile"
                     android:layout_width="wrap_content"
@@ -182,7 +183,7 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- ── Center Create FAB (floats above bottom nav) ────────────────── -->
+    <!-- ── Center Create FAB ──────────────────────────────────────────── -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_create_btn"
         android:layout_width="56dp"
@@ -194,7 +195,6 @@
         app:backgroundTint="@color/brand_primary"
         app:tint="@color/white"
         app:elevation="6dp"
-        app:fabSize="normal"
-        app:shapeAppearance="@style/ShapeAppearance.AIFoodApp.Pill" />
+        app:fabSize="normal" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

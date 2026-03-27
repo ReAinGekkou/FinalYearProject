@@ -6,7 +6,13 @@
     android:orientation="vertical">
 
     <include layout="@layout/item_shimmer_row" />
-    <include layout="@layout/item_shimmer_row" android:layout_marginTop="12dp" />
-    <include layout="@layout/item_shimmer_row" android:layout_marginTop="12dp" />
+
+    <include
+        layout="@layout/item_shimmer_row"
+        android:layout_marginTop="12dp" />
+
+    <include
+        layout="@layout/item_shimmer_row"
+        android:layout_marginTop="12dp" />
 
 </LinearLayout>
