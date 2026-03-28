@@ -13,7 +13,6 @@ import com.example.finalyearproject.databinding.FragmentHomeBinding
 import com.example.finalyearproject.utils.FirestoreSeeder
 import com.example.finalyearproject.utils.Resource
 import com.google.android.material.chip.Chip
-import java.util.Locale
 
 class HomeFragment : Fragment() {
 
@@ -108,7 +107,7 @@ class HomeFragment : Fragment() {
                 setTextColor(resources.getColorStateList(
                     com.example.finalyearproject.R.color.selector_chip_text, null))
                 setChipBackgroundColorResource(
-                    com.example.finalyearproject.R.color.selector_chip_bg_color)
+                    com.example.finalyearproject.R.color.selector_chip_bg)
                 setChipStrokeColorResource(
                     com.example.finalyearproject.R.color.brand_primary)
             }

@@ -47,72 +47,7 @@ data class User(
     )
 }
 
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Recipe.kt
-// Firestore collection: "recipes"
-// ─────────────────────────────────────────────────────────────────────────────
-@Parcelize
-data class Recipe(
-    @DocumentId
-    val recipeId: String = "",
-    val authorId: String = "",
-    val authorName: String = "",
-    val authorImageUrl: String? = null,
-    val title: String = "",
-    val description: String = "",
-    val imageUrl: String? = null,
-    val category: String = "",           // e.g. "Breakfast", "Dinner", "Dessert"
-    val cuisineType: String = "",        // e.g. "Italian", "Asian"
-    val ingredients: List<String> = emptyList(),
-    val instructions: List<String> = emptyList(),
-    val prepTimeMinutes: Int = 0,
-    val cookTimeMinutes: Int = 0,
-    val servings: Int = 1,
-    val calories: Int? = null,
-    val difficulty: RecipeDifficulty = RecipeDifficulty.MEDIUM,
-    val tags: List<String> = emptyList(),
-    val likeCount: Int = 0,
-    val reviewCount: Int = 0,
-    val averageRating: Double = 0.0,
-    val isFeatured: Boolean = false,
-    val isPublished: Boolean = true,
-    @ServerTimestamp
-    val createdAt: Timestamp? = null,
-    @ServerTimestamp
-    val updatedAt: Timestamp? = null
-) : Parcelable {
-
-    fun toMap(): Map<String, Any?> = mapOf(
-        "authorId" to authorId,
-        "authorName" to authorName,
-        "authorImageUrl" to authorImageUrl,
-        "title" to title,
-        "description" to description,
-        "imageUrl" to imageUrl,
-        "category" to category,
-        "cuisineType" to cuisineType,
-        "ingredients" to ingredients,
-        "instructions" to instructions,
-        "prepTimeMinutes" to prepTimeMinutes,
-        "cookTimeMinutes" to cookTimeMinutes,
-        "servings" to servings,
-        "calories" to calories,
-        "difficulty" to difficulty.name,
-        "tags" to tags,
-        "likeCount" to likeCount,
-        "reviewCount" to reviewCount,
-        "averageRating" to averageRating,
-        "isFeatured" to isFeatured,
-        "isPublished" to isPublished
-    )
-
-    /** Total time helper */
-    val totalTimeMinutes: Int get() = prepTimeMinutes + cookTimeMinutes
-}
-
 enum class RecipeDifficulty { EASY, MEDIUM, HARD }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Blog.kt

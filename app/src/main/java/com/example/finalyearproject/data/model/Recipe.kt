@@ -30,7 +30,7 @@ data class Recipe(
     val cookTimeMinutes: Int = 0,
     val servings: Int = 1,
     val calories: Int? = null,
-    val difficulty: String = "MEDIUM",
+    val difficulty: RecipeDifficulty = RecipeDifficulty.MEDIUM,
     val likeCount: Int = 0,
     val viewCount: Int = 0,                // tracked via user_activity
     val commentCount: Int = 0,
@@ -64,7 +64,7 @@ data class Recipe(
         "cookTimeMinutes" to cookTimeMinutes,
         "servings"        to servings,
         "calories"        to calories,
-        "difficulty"      to difficulty,
+        "difficulty"      to difficulty.name,
         "likeCount"       to likeCount,
         "viewCount"       to viewCount,
         "commentCount"    to commentCount,

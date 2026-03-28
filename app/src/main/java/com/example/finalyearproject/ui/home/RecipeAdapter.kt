@@ -100,7 +100,7 @@ class RecipeAdapter(
                 Locale.getDefault(), "%.1f (%d)", recipe.averageRating, recipe.reviewCount)
             b.tvAuthorName.text    = recipe.authorName.ifBlank { b.root.context.getString(R.string.label_unknown_author) }
             b.tvCookTime.text      = formatTime(recipe.totalTimeMinutes)
-            b.chipDifficulty.text  = recipe.difficulty.lowercase().replaceFirstChar { it.uppercase() }
+            b.chipDifficulty.text  = recipe.difficulty.name.lowercase().replaceFirstChar { it.uppercase() }
             updateFavoriteIcon(recipe.recipeId in likedIds)
 
             Glide.with(b.ivRecipeImage.context)
