@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/layout/fragment_placeholder.xml
+     Reused by CommunityFragment and ChatFragment as coming-soon screens. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@color/bg_screen"
+    android:paddingHorizontal="32dp">
+
+    <TextView
+        android:id="@+id/tv_placeholder_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="28sp"
+        android:fontFamily="sans-serif-bold"
+        android:textColor="@color/text_primary"
+        android:gravity="center" />
+
+    <TextView
+        android:id="@+id/tv_placeholder_sub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textSize="15sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:lineSpacingMultiplier="1.4" />
+
+</LinearLayout>

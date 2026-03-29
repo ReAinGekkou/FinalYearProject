@@ -1,200 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    activity_main.xml — FIXED
-    Removed NavHostFragment (requires nav graph + Navigation dependency).
-    Uses a plain FrameLayout fragment container instead.
-    MainActivity.kt manages fragments manually — no nav graph needed.
+    activity_main.xml — Single Activity host
+    ConstraintLayout ensures BottomNavigationView is always visible
+    and the fragment container never overlaps it.
 -->
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_screen">
 
-    <!-- ── Fragment host — plain FrameLayout, no nav graph needed ─────── -->
+    <!-- Fragment container — constrained ABOVE the bottom nav bar -->
     <FrameLayout
         android:id="@+id/fragment_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav" />
 
-    <!-- ── Bottom navigation bar ──────────────────────────────────────── -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_bottom_nav"
-        android:layout_width="match_parent"
+    <!-- Bottom Navigation — pinned to the bottom, always visible -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_nav"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        app:cardCornerRadius="0dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="@color/white"
-        app:strokeWidth="0dp">
+        android:background="@color/white"
+        app:menu="@menu/menu_bottom_nav"
+        app:itemIconTint="@color/selector_nav_color"
+        app:itemTextColor="@color/selector_nav_color"
+        app:labelVisibilityMode="labeled"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="64dp">
-
-            <!-- Home -->
-            <LinearLayout
-                android:id="@+id/nav_home"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/nav_community"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent">
-
-                <ImageView
-                    android:id="@+id/iv_home"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_home"
-                    android:contentDescription="@string/nav_home"
-                    app:tint="@color/brand_primary" />
-
-                <TextView
-                    android:id="@+id/tv_nav_home"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text="@string/nav_home"
-                    android:textSize="10sp"
-                    android:textColor="@color/brand_primary" />
-
-            </LinearLayout>
-
-            <!-- Community -->
-            <LinearLayout
-                android:id="@+id/nav_community"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                app:layout_constraintStart_toEndOf="@id/nav_home"
-                app:layout_constraintEnd_toStartOf="@id/space_fab"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent">
-
-                <ImageView
-                    android:id="@+id/iv_community"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_community"
-                    android:contentDescription="@string/nav_community"
-                    app:tint="@color/text_hint" />
-
-                <TextView
-                    android:id="@+id/tv_nav_community"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text="@string/nav_community"
-                    android:textSize="10sp"
-                    android:textColor="@color/text_hint" />
-
-            </LinearLayout>
-
-            <!-- Center space for FAB -->
-            <View
-                android:id="@+id/space_fab"
-                android:layout_width="64dp"
-                android:layout_height="match_parent"
-                app:layout_constraintStart_toEndOf="@id/nav_community"
-                app:layout_constraintEnd_toStartOf="@id/nav_chat"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
-
-            <!-- Chat -->
-            <LinearLayout
-                android:id="@+id/nav_chat"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                app:layout_constraintStart_toEndOf="@id/space_fab"
-                app:layout_constraintEnd_toStartOf="@id/nav_profile"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent">
-
-                <ImageView
-                    android:id="@+id/iv_chat"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_chat"
-                    android:contentDescription="@string/nav_chat"
-                    app:tint="@color/text_hint" />
-
-                <TextView
-                    android:id="@+id/tv_nav_chat"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text="@string/nav_chat"
-                    android:textSize="10sp"
-                    android:textColor="@color/text_hint" />
-
-            </LinearLayout>
-
-            <!-- Profile -->
-            <LinearLayout
-                android:id="@+id/nav_profile"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                app:layout_constraintStart_toEndOf="@id/nav_chat"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent">
-
-                <ImageView
-                    android:id="@+id/iv_profile"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_person"
-                    android:contentDescription="@string/nav_profile"
-                    app:tint="@color/text_hint" />
-
-                <TextView
-                    android:id="@+id/tv_nav_profile"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text="@string/nav_profile"
-                    android:textSize="10sp"
-                    android:textColor="@color/text_hint" />
-
-            </LinearLayout>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- ── Center Create FAB ──────────────────────────────────────────── -->
+    <!-- Center Create FAB — sits above the bottom nav -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_create_btn"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="20dp"
+        android:id="@+id/fab_create"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
         android:src="@drawable/ic_add"
         android:contentDescription="@string/fab_create"
         app:backgroundTint="@color/brand_primary"
         app:tint="@color/white"
-        app:elevation="6dp"
-        app:fabSize="normal" />
+        app:fabSize="mini"
+        app:elevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

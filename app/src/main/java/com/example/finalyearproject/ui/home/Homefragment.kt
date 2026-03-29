@@ -9,10 +9,12 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.finalyearproject.R
 import com.example.finalyearproject.databinding.FragmentHomeBinding
 import com.example.finalyearproject.utils.FirestoreSeeder
 import com.example.finalyearproject.utils.Resource
 import com.google.android.material.chip.Chip
+import com.google.firebase.auth.FirebaseAuth
 
 class HomeFragment : Fragment() {
 
@@ -21,12 +23,14 @@ class HomeFragment : Fragment() {
 
     private val viewModel: HomeViewModel by viewModels()
 
-    private lateinit var recommendAdapter: RecipeAdapter
+    private lateinit var aiAdapter: RecipeAdapter
     private lateinit var trendingAdapter: RecipeAdapter
     private lateinit var allRecipesAdapter: RecipeAdapter
 
-    private val categories = listOf("All","Soup","Rice","Noodle","Sandwich",
-        "Stir Fry","Appetizer","Dessert","Crepe")
+    private val categories = listOf(
+        "All", "Soup", "Rice", "Noodle",
+        "Sandwich", "Stir Fry", "Dessert", "Salad"
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -39,50 +43,61 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Seed data so the screen is never blank
+        // Seed sample data if Firestore is empty
         FirestoreSeeder.seedIfEmpty()
 
-        setupRecyclerViews()
+        setupGreeting()
+        setupAdapters()
         setupCategoryChips()
         setupSearch()
-        setupSwipeRefresh()
         observeViewModel()
+
+        binding.btnRetry.setOnClickListener { viewModel.loadAll() }
     }
 
-    // ── RecyclerViews ─────────────────────────────────────────────────────────
+    // ── Greeting ──────────────────────────────────────────────────────────────
 
-    private fun setupRecyclerViews() {
-        recommendAdapter = RecipeAdapter(
-            onRecipeClick   = { recipe -> navigateToDetail(recipe.recipeId) },
+    private fun setupGreeting() {
+        val user = FirebaseAuth.getInstance().currentUser
+        val name = user?.displayName?.takeIf { it.isNotBlank() }
+            ?: user?.email?.substringBefore("@")
+            ?: "Chef"
+        binding.tvUserName.text = name
+    }
+
+    // ── Adapters ──────────────────────────────────────────────────────────────
+
+    private fun setupAdapters() {
+        aiAdapter = RecipeAdapter(
+            onRecipeClick   = { recipe -> viewModel.onRecipeVisible(recipe.recipeId) },
             onFavoriteClick = { recipe -> viewModel.toggleLike(recipe) },
             horizontal      = true
         )
         trendingAdapter = RecipeAdapter(
-            onRecipeClick   = { recipe -> navigateToDetail(recipe.recipeId) },
+            onRecipeClick   = { recipe -> viewModel.onRecipeVisible(recipe.recipeId) },
             onFavoriteClick = { recipe -> viewModel.toggleLike(recipe) },
             horizontal      = true
         )
         allRecipesAdapter = RecipeAdapter(
-            onRecipeClick   = { recipe ->
+            onRecipeClick = { recipe ->
                 viewModel.onRecipeVisible(recipe.recipeId)
-                navigateToDetail(recipe.recipeId)
             },
             onFavoriteClick = { recipe -> viewModel.toggleLike(recipe) },
             horizontal      = false
         )
 
         binding.rvRecommended.apply {
-            adapter     = recommendAdapter
+            adapter = aiAdapter
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             setHasFixedSize(true)
         }
         binding.rvTrending.apply {
-            adapter     = trendingAdapter
+            adapter = trendingAdapter
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             setHasFixedSize(true)
         }
         binding.rvRecipes.apply {
-            adapter       = allRecipesAdapter
+            adapter = allRecipesAdapter
             layoutManager = LinearLayoutManager(context)
             setHasFixedSize(false)
             isNestedScrollingEnabled = false
@@ -92,32 +107,25 @@ class HomeFragment : Fragment() {
     // ── Category chips ────────────────────────────────────────────────────────
 
     private fun setupCategoryChips() {
-        val group = binding.chipGroupCategories
-        group.removeAllViews()
-
+        binding.chipGroupCategories.removeAllViews()
         categories.forEach { cat ->
             val chip = Chip(requireContext()).apply {
-                text       = cat
+                text        = cat
                 isCheckable = true
-                isChecked  = cat == "All"
-                chipCornerRadius  = 20f
-                chipStrokeWidth   = 1.5f
-                chipMinHeight     = 36f.dpToPx()
-                textSize          = 13f
-                setTextColor(resources.getColorStateList(
-                    com.example.finalyearproject.R.color.selector_chip_text, null))
-                setChipBackgroundColorResource(
-                    com.example.finalyearproject.R.color.selector_chip_bg)
-                setChipStrokeColorResource(
-                    com.example.finalyearproject.R.color.brand_primary)
+                isChecked   = cat == "All"
+                chipCornerRadius = resources.getDimension(R.dimen.spacing_xl)
+                chipStrokeWidth  = 1.5f
+                setTextColor(requireContext().getColorStateList(R.color.selector_chip_text))
+                chipBackgroundColor = requireContext().getColorStateList(R.color.selector_chip_bg)
+                setChipStrokeColorResource(R.color.brand_primary)
+                textSize = 13f
             }
             chip.setOnCheckedChangeListener { _, checked ->
                 if (checked) {
-                    val selected = if (cat == "All") null else cat
-                    viewModel.filterByCategory(selected)
+                    viewModel.filterByCategory(if (cat == "All") null else cat)
                 }
             }
-            group.addView(chip)
+            binding.chipGroupCategories.addView(chip)
         }
     }
 
@@ -128,36 +136,21 @@ class HomeFragment : Fragment() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                val query = s?.toString()?.trim() ?: ""
-                // Show/hide sections based on search mode
-                val isSearching = query.isNotEmpty()
-                binding.layoutAiSection.visibility     = if (isSearching) View.GONE else View.VISIBLE
+                val q = s?.toString()?.trim() ?: ""
+                val isSearching = q.isNotEmpty()
+                binding.layoutAiSection.visibility      = if (isSearching) View.GONE else View.VISIBLE
                 binding.layoutTrendingSection.visibility = if (isSearching) View.GONE else View.VISIBLE
-                viewModel.search(query)
+                viewModel.search(q)
             }
         })
-    }
-
-    // ── Swipe to refresh ─────────────────────────────────────────────────────
-
-    private fun setupSwipeRefresh() {
-        binding.swipeRefresh.setColorSchemeResources(
-            com.example.finalyearproject.R.color.brand_primary)
-        binding.swipeRefresh.setOnRefreshListener {
-            viewModel.refresh()
-        }
     }
 
     // ── Observers ─────────────────────────────────────────────────────────────
 
     private fun observeViewModel() {
 
-        viewModel.isRefreshing.observe(viewLifecycleOwner) { refreshing ->
-            binding.swipeRefresh.isRefreshing = refreshing
-        }
-
         viewModel.likedIds.observe(viewLifecycleOwner) { ids ->
-            recommendAdapter.setLikedIds(ids)
+            aiAdapter.setLikedIds(ids)
             trendingAdapter.setLikedIds(ids)
             allRecipesAdapter.setLikedIds(ids)
         }
@@ -165,21 +158,21 @@ class HomeFragment : Fragment() {
         viewModel.recommendations.observe(viewLifecycleOwner) { resource ->
             when (resource) {
                 is Resource.Loading -> {
-                    binding.shimmerRecommended.apply { startShimmer(); visibility = View.VISIBLE }
+                    binding.shimmerAi.apply { startShimmer(); visibility = View.VISIBLE }
                     binding.rvRecommended.visibility = View.GONE
                 }
                 is Resource.Success -> {
-                    binding.shimmerRecommended.apply { stopShimmer(); visibility = View.GONE }
+                    binding.shimmerAi.apply { stopShimmer(); visibility = View.GONE }
                     if (resource.data.isEmpty()) {
                         binding.layoutAiSection.visibility = View.GONE
                     } else {
                         binding.layoutAiSection.visibility = View.VISIBLE
                         binding.rvRecommended.visibility   = View.VISIBLE
-                        recommendAdapter.submitList(resource.data)
+                        aiAdapter.submitList(resource.data)
                     }
                 }
                 is Resource.Error -> {
-                    binding.shimmerRecommended.apply { stopShimmer(); visibility = View.GONE }
+                    binding.shimmerAi.apply { stopShimmer(); visibility = View.GONE }
                     binding.layoutAiSection.visibility = View.GONE
                 }
             }
@@ -211,11 +204,13 @@ class HomeFragment : Fragment() {
             when (resource) {
                 is Resource.Loading -> {
                     binding.shimmerRecipes.apply { startShimmer(); visibility = View.VISIBLE }
-                    binding.rvRecipes.visibility    = View.GONE
-                    binding.layoutEmpty.visibility  = View.GONE
+                    binding.rvRecipes.visibility   = View.GONE
+                    binding.layoutEmpty.visibility = View.GONE
                 }
                 is Resource.Success -> {
                     binding.shimmerRecipes.apply { stopShimmer(); visibility = View.GONE }
+                    val count = resource.data.size
+                    binding.tvRecipeCount.text = if (count > 0) "$count recipes" else ""
                     if (resource.data.isEmpty()) {
                         binding.rvRecipes.visibility   = View.GONE
                         binding.layoutEmpty.visibility = View.VISIBLE
@@ -232,19 +227,6 @@ class HomeFragment : Fragment() {
             }
         }
     }
-
-    // ── Navigation ────────────────────────────────────────────────────────────
-
-    private fun navigateToDetail(recipeId: String) {
-        // Uncomment when RecipeDetailFragment is ready:
-        // val action = HomeFragmentDirections.actionHomeToDetail(recipeId)
-        // findNavController().navigate(action)
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private fun Float.dpToPx(): Float =
-        this * resources.displayMetrics.density
 
     override fun onDestroyView() {
         super.onDestroyView()

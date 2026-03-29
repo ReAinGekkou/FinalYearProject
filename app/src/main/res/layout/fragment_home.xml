@@ -1,182 +1,193 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/swipeRefresh"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_screen">
 
+    <!-- Collapsing app bar for smooth scroll behavior -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/bg_screen"
+        android:elevation="0dp"
+        app:liftOnScroll="true"
+        app:liftOnScrollTargetViewId="@id/nested_scroll">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="12dp">
+
+            <!-- Greeting -->
+            <TextView
+                android:id="@+id/tv_greeting"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Hello 👋"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/iv_avatar" />
+
+            <!-- User name -->
+            <TextView
+                android:id="@+id/tv_user_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="22sp"
+                android:fontFamily="sans-serif-bold"
+                android:textColor="@color/text_primary"
+                android:maxLines="1"
+                android:ellipsize="end"
+                app:layout_constraintTop_toBottomOf="@id/tv_greeting"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/iv_avatar"
+                tools:text="Chef Minh" />
+
+            <!-- Avatar -->
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/iv_avatar"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@drawable/ic_avatar_placeholder"
+                android:scaleType="centerCrop"
+                android:contentDescription="@string/cd_user_avatar"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.AIFoodApp.Pill"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="@id/tv_user_name"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Search bar -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_search"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                app:boxCornerRadiusTopStart="24dp"
+                app:boxCornerRadiusTopEnd="24dp"
+                app:boxCornerRadiusBottomStart="24dp"
+                app:boxCornerRadiusBottomEnd="24dp"
+                app:boxStrokeWidth="0dp"
+                app:boxStrokeWidthFocused="1.5dp"
+                app:boxStrokeColor="@color/brand_primary"
+                app:boxBackgroundColor="@color/white"
+                app:startIconDrawable="@drawable/ic_search"
+                app:startIconTint="@color/text_hint"
+                android:hint="@string/hint_search"
+                app:hintTextColor="@color/text_hint"
+                app:layout_constraintTop_toBottomOf="@id/tv_user_name"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_search"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:imeOptions="actionSearch"
+                    android:textColor="#212121"
+                    android:textColorHint="#9E9E9E"
+                    android:textSize="14sp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Category chips -->
+            <HorizontalScrollView
+                android:id="@+id/hsv_categories"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:scrollbars="none"
+                android:overScrollMode="never"
+                app:layout_constraintTop_toBottomOf="@id/til_search"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group_categories"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true"
+                    app:selectionRequired="true" />
+
+            </HorizontalScrollView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Scrollable content -->
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/nested_scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:overScrollMode="never"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingBottom="88dp">
+            android:paddingBottom="16dp">
 
-            <!-- ── Header ──────────────────────────────────────────────── -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingHorizontal="16dp"
-                android:paddingTop="16dp"
-                android:paddingBottom="12dp"
-                android:background="@color/bg_screen">
-
-                <TextView
-                    android:id="@+id/tv_greeting"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:text="@string/greeting_default"
-                    android:textSize="13sp"
-                    android:textColor="@color/text_secondary"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/iv_avatar" />
-
-                <TextView
-                    android:id="@+id/tv_home_title"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/home_title"
-                    android:textSize="22sp"
-                    android:fontFamily="sans-serif-bold"
-                    android:textColor="@color/text_primary"
-                    app:layout_constraintTop_toBottomOf="@id/tv_greeting"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/iv_avatar" />
-
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/iv_avatar"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:src="@drawable/ic_avatar_placeholder"
-                    android:scaleType="centerCrop"
-                    android:contentDescription="@string/cd_user_avatar"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.AIFoodApp.Pill"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
-
-                <!-- Search bar -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/til_search"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="24dp"
-                    app:boxCornerRadiusTopEnd="24dp"
-                    app:boxCornerRadiusBottomStart="24dp"
-                    app:boxCornerRadiusBottomEnd="24dp"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp"
-                    app:boxBackgroundColor="@color/white"
-                    app:startIconDrawable="@drawable/ic_search"
-                    app:startIconTint="@color/text_hint"
-                    android:hint="@string/hint_search"
-                    app:hintTextColor="@color/text_hint"
-                    app:layout_constraintTop_toBottomOf="@id/tv_home_title"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/et_search"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="text"
-                        android:imeOptions="actionSearch"
-                        android:paddingTop="12dp"
-                        android:paddingBottom="12dp"
-                        android:textColor="#212121"
-                        android:textColorHint="#9E9E9E"
-                        android:textSize="14sp" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Category chips -->
-                <HorizontalScrollView
-                    android:id="@+id/hsv_categories"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:scrollbars="none"
-                    android:overScrollMode="never"
-                    app:layout_constraintTop_toBottomOf="@id/til_search"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent">
-
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chip_group_categories"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:singleSelection="true"
-                        app:selectionRequired="true" />
-
-                </HorizontalScrollView>
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 AI RECOMMENDATION SECTION
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- ══ AI RECOMMENDED ══════════════════════════════════════ -->
             <LinearLayout
                 android:id="@+id/layout_ai_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="8dp">
+                android:layout_marginTop="8dp"
+                android:visibility="gone">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
                     android:paddingHorizontal="16dp">
 
-                    <ImageView
-                        android:id="@+id/iv_ai_icon"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:src="@drawable/ic_ai_chat"
-                        app:tint="@color/brand_primary"
-                        android:contentDescription="@null"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent" />
-
                     <TextView
-                        android:id="@+id/tv_ai_label"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
                         android:text="@string/label_ai_recommended"
                         android:textSize="17sp"
                         android:fontFamily="sans-serif-bold"
-                        android:textColor="@color/text_primary"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/iv_ai_icon"
-                        app:layout_constraintEnd_toEndOf="parent" />
+                        android:textColor="@color/text_primary" />
 
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="AI ✨"
+                        android:textSize="11sp"
+                        android:textColor="@color/brand_primary"
+                        android:background="@drawable/bg_ai_badge"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp" />
 
-                <!-- Shimmer for AI recs -->
+                </LinearLayout>
+
+                <!-- AI shimmer -->
                 <com.facebook.shimmer.ShimmerFrameLayout
-                    android:id="@+id/shimmer_recommended"
+                    android:id="@+id/shimmer_ai"
                     android:layout_width="match_parent"
-                    android:layout_height="180dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:visibility="gone"
-                    android:paddingHorizontal="16dp">
-
+                    android:paddingHorizontal="16dp"
+                    android:visibility="gone">
                     <include layout="@layout/layout_shimmer_horizontal" />
-
                 </com.facebook.shimmer.ShimmerFrameLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
@@ -194,15 +205,14 @@
 
             </LinearLayout>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 TRENDING SECTION
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- ══ TRENDING ════════════════════════════════════════════ -->
             <LinearLayout
                 android:id="@+id/layout_trending_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="24dp">
+                android:layout_marginTop="24dp"
+                android:visibility="gone">
 
                 <TextView
                     android:layout_width="match_parent"
@@ -213,17 +223,15 @@
                     android:fontFamily="sans-serif-bold"
                     android:textColor="@color/text_primary" />
 
-                <!-- Shimmer for trending -->
+                <!-- Trending shimmer -->
                 <com.facebook.shimmer.ShimmerFrameLayout
                     android:id="@+id/shimmer_trending"
                     android:layout_width="match_parent"
-                    android:layout_height="180dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:visibility="gone"
-                    android:paddingHorizontal="16dp">
-
+                    android:paddingHorizontal="16dp"
+                    android:visibility="gone">
                     <include layout="@layout/layout_shimmer_horizontal" />
-
                 </com.facebook.shimmer.ShimmerFrameLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
@@ -241,9 +249,7 @@
 
             </LinearLayout>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 ALL RECIPES SECTION
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- ══ ALL RECIPES ═════════════════════════════════════════ -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -251,7 +257,7 @@
                 android:paddingHorizontal="16dp">
 
                 <TextView
-                    android:id="@+id/tv_all_recipes_label"
+                    android:id="@+id/tv_all_label"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:text="@string/label_all_recipes"
@@ -260,33 +266,30 @@
                     android:textColor="@color/text_primary"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/btn_see_all" />
+                    app:layout_constraintEnd_toStartOf="@id/tv_recipe_count" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_see_all"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                <TextView
+                    android:id="@+id/tv_recipe_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/btn_see_all"
                     android:textSize="13sp"
-                    android:textColor="@color/brand_primary"
+                    android:textColor="@color/text_hint"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
+                    app:layout_constraintEnd_toEndOf="parent"
+                    tools:text="24 recipes" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- Shimmer for recipe list -->
+            <!-- All recipes shimmer -->
             <com.facebook.shimmer.ShimmerFrameLayout
                 android:id="@+id/shimmer_recipes"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:visibility="gone"
-                android:paddingHorizontal="16dp">
-
+                android:paddingHorizontal="16dp"
+                android:visibility="gone">
                 <include layout="@layout/layout_shimmer_vertical" />
-
             </com.facebook.shimmer.ShimmerFrameLayout>
 
             <!-- Empty state -->
@@ -297,8 +300,8 @@
                 android:orientation="vertical"
                 android:gravity="center"
                 android:layout_marginTop="48dp"
-                android:visibility="gone"
-                android:paddingHorizontal="32dp">
+                android:paddingHorizontal="32dp"
+                android:visibility="gone">
 
                 <ImageView
                     android:layout_width="100dp"
@@ -317,14 +320,14 @@
                     android:textColor="@color/text_secondary"
                     android:gravity="center" />
 
-                <TextView
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_retry"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/empty_recipes_sub"
-                    android:textSize="14sp"
-                    android:textColor="@color/text_hint"
-                    android:gravity="center" />
+                    android:layout_marginTop="16dp"
+                    android:text="Retry"
+                    app:backgroundTint="@color/brand_primary"
+                    app:cornerRadius="12dp" />
 
             </LinearLayout>
 
@@ -345,4 +348,4 @@
 
     </androidx.core.widget.NestedScrollView>
 
-</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

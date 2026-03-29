@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/menu/menu_bottom_nav.xml -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_home"
+        android:title="@string/nav_home" />
+
+    <item
+        android:id="@+id/nav_community"
+        android:icon="@drawable/ic_community"
+        android:title="@string/nav_community" />
+
+    <!--
+        Center "Create" item — we hide its icon/label and float a FAB over it.
+        The empty item reserves the space in the middle slot.
+    -->
+    <item
+        android:id="@+id/nav_create"
+        android:icon="@drawable/ic_add"
+        android:title=""
+        android:enabled="false" />
+
+    <item
+        android:id="@+id/nav_chat"
+        android:icon="@drawable/ic_chat"
+        android:title="@string/nav_chat" />
+
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/ic_person"
+        android:title="@string/nav_profile" />
+
+</menu>

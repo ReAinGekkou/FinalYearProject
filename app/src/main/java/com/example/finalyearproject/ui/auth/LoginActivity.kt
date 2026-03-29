@@ -9,7 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.example.finalyearproject.R
 import com.example.finalyearproject.databinding.ActivityLoginBinding
 import com.example.finalyearproject.ui.BaseActivity
-import com.example.finalyearproject.ui.home.HomeActivity
+import com.example.finalyearproject.ui.MainActivity
 import com.example.finalyearproject.utils.LanguageManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -188,7 +188,7 @@ class LoginActivity : BaseActivity() {
     }
 
     private fun goHome() {
-        startActivity(Intent(this, HomeActivity::class.java).apply {
+        startActivity(Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         })
         finish()
