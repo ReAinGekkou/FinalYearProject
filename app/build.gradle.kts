@@ -91,4 +91,9 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    // ViewPager2 (for Profile tabs + CreateRecipe steps)
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
+
+
+
 }
