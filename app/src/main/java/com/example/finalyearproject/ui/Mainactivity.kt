@@ -32,7 +32,7 @@ class MainActivity : BaseActivity() {
     private val chatFragment      by lazy { ChatFragment() }
     private val profileFragment   by lazy { ProfileFragment() }
 
-    private var currentTag = TAG_HOME
+    private var currentTag = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
