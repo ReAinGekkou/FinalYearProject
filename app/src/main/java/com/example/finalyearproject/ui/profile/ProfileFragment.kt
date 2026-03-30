@@ -6,35 +6,49 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.bumptech.glide.Glide
 import com.example.finalyearproject.R
+import com.example.finalyearproject.data.model.Recipe
+import com.example.finalyearproject.data.repository.RecipeRepository
 import com.example.finalyearproject.databinding.FragmentProfileBinding
 import com.example.finalyearproject.databinding.FragmentRecipeListBinding
-import com.example.finalyearproject.data.model.Recipe
 import com.example.finalyearproject.ui.MainActivity
 import com.example.finalyearproject.ui.home.RecipeAdapter
+import com.example.finalyearproject.utils.LanguageManager
 import com.example.finalyearproject.utils.Resource
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProfileViewModel
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProfileFragment
+// ─────────────────────────────────────────────────────────────────────────────
 
 class ProfileFragment : Fragment() {
 
-    private var _binding: FragmentProfileBinding? = null
-    private val binding get() = _binding!!
+    private var _b: FragmentProfileBinding? = null
+    private val b get() = _b!!
 
     private val auth = FirebaseAuth.getInstance()
     private val db   = FirebaseFirestore.getInstance()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, state: Bundle?
     ): View {
-        _binding = FragmentProfileBinding.inflate(inflater, container, false)
-        return binding.root
+        _b = FragmentProfileBinding.inflate(inflater, container, false)
+        return b.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -44,36 +58,40 @@ class ProfileFragment : Fragment() {
         setupButtons()
     }
 
-    // ── Header ────────────────────────────────────────────────────────────────
-
     private fun loadHeader() {
         val user = auth.currentUser ?: return
-        binding.tvName.text  = user.displayName?.takeIf { it.isNotBlank() }
+        b.tvName.text  = user.displayName?.takeIf { it.isNotBlank() }
             ?: user.email?.substringBefore("@") ?: "User"
-        binding.tvEmail.text = user.email ?: ""
+        b.tvEmail.text = user.email ?: ""
+
+        // Load avatar from Google/Firebase
+        if (user.photoUrl != null) {
+            Glide.with(this)
+                .load(user.photoUrl)
+                .placeholder(R.drawable.ic_avatar_placeholder)
+                .circleCrop()
+                .into(b.ivAvatar)
+        }
 
         db.collection("users").document(user.uid).get()
             .addOnSuccessListener { doc ->
                 if (!isAdded) return@addOnSuccessListener
-                binding.tvRecipeCount.text  = (doc.getLong("recipeCount")   ?: 0).toString()
-                binding.tvFollowers.text    = (doc.getLong("followerCount") ?: 0).toString()
-                binding.tvFollowing.text    = (doc.getLong("followingCount") ?: 0).toString()
+                b.tvRecipeCount.text = (doc.getLong("recipeCount")    ?: 0).toString()
+                b.tvFollowers.text   = (doc.getLong("followerCount")  ?: 0).toString()
+                b.tvFollowing.text   = (doc.getLong("followingCount") ?: 0).toString()
             }
     }
 
-    // ── Tabs (My Recipes | Favorites) ─────────────────────────────────────────
-
     private fun setupTabs() {
-        binding.viewPager.adapter = ProfilePagerAdapter(this)
-        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, pos ->
+        b.viewPager.adapter = ProfilePagerAdapter(this)
+        TabLayoutMediator(b.tabLayout, b.viewPager) { tab, pos ->
             tab.text = if (pos == 0) "My Recipes" else "Favorites"
         }.attach()
     }
 
-    // ── Buttons ───────────────────────────────────────────────────────────────
-
     private fun setupButtons() {
-        binding.btnLogout.setOnClickListener {
+        // ── LOGOUT ────────────────────────────────────────────────────────────
+        b.btnLogout.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Sign Out")
                 .setMessage("Are you sure you want to sign out?")
@@ -84,18 +102,20 @@ class ProfileFragment : Fragment() {
                 .show()
         }
 
-        binding.btnSettings.setOnClickListener {
-            // Language toggle dialog
-            val current = com.example.finalyearproject.utils.LanguageManager
-                .getSavedLanguage(requireContext())
-            val isVi = current == "vi"
+        // ── SETTINGS ──────────────────────────────────────────────────────────
+        b.btnSettings.setOnClickListener {
+            val current = LanguageManager.getSavedLanguage(requireContext())
+            val label   = if (current == "vi") "🌐 Switch to English"
+            else "🌐 Switch to Vietnamese"
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Settings")
-                .setItems(arrayOf(if (isVi) "🌐 Switch to English" else "🌐 Switch to Vietnamese")) { _, _ ->
-                    com.example.finalyearproject.utils.LanguageManager.setLanguage(
-                        requireActivity(),
-                        com.example.finalyearproject.utils.LanguageManager.toggle(current)
-                    )
+                .setItems(arrayOf(label, "🔔 Notifications (coming soon)")) { _, which ->
+                    if (which == 0) {
+                        LanguageManager.setLanguage(
+                            requireActivity(),
+                            LanguageManager.toggle(current)
+                        )
+                    }
                 }
                 .show()
         }
@@ -103,22 +123,19 @@ class ProfileFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null
+        _b = null
     }
-
-    // ── ViewPager2 adapter ────────────────────────────────────────────────────
 
     private inner class ProfilePagerAdapter(f: Fragment) : FragmentStateAdapter(f) {
         override fun getItemCount() = 2
-        override fun createFragment(position: Int): Fragment =
-            if (position == 0) RecipeListFragment.newMyRecipes()
+        override fun createFragment(pos: Int): Fragment =
+            if (pos == 0) RecipeListFragment.newMyRecipes()
             else RecipeListFragment.newFavorites()
     }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// RecipeListFragment — shared fragment for both tabs
+// RecipeListFragment — shared tab for My Recipes and Favorites
 // ─────────────────────────────────────────────────────────────────────────────
 
 class RecipeListFragment : Fragment() {
@@ -132,8 +149,7 @@ class RecipeListFragment : Fragment() {
     private val isMyRecipes get() = arguments?.getBoolean(ARG_MY) == true
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, state: Bundle?
     ): View {
         _b = FragmentRecipeListBinding.inflate(inflater, container, false)
         return b.root
@@ -143,34 +159,53 @@ class RecipeListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         adapter = RecipeAdapter(
-            onRecipeClick   = { r -> openDetail(r) },
+            onRecipeClick   = { recipe -> openDetail(recipe.recipeId) },
             onFavoriteClick = { },
             horizontal      = false
         )
-        b.rvRecipes.adapter = adapter
+        b.rvRecipes.adapter       = adapter
         b.rvRecipes.layoutManager = LinearLayoutManager(context)
 
+        // Pull-to-refresh
+        b.swipeRefresh.setColorSchemeResources(R.color.brand_primary)
+        b.swipeRefresh.setOnRefreshListener { reload() }
+
+        setupEmptyState()
+
         if (isMyRecipes) {
-            b.tvEmptySub.text  = "Start sharing your cooking!"
-            b.btnEmptyAction.text = "Create Recipe"
-            b.btnEmptyAction.setOnClickListener {
-                (requireActivity() as? MainActivity)?.openCreateRecipe()
-            }
             viewModel.myRecipes.observe(viewLifecycleOwner) { render(it) }
             viewModel.loadMyRecipes()
         } else {
-            b.tvEmptyTitle.text = "No saved recipes"
-            b.tvEmptySub.text   = "Save recipes to find them here"
-            b.btnEmptyAction.text = "Explore Recipes"
-            b.btnEmptyAction.setOnClickListener {
-                (requireActivity() as? MainActivity)?.switchToHome()
-            }
             viewModel.favorites.observe(viewLifecycleOwner) { render(it) }
             viewModel.loadFavorites()
         }
     }
 
+    private fun setupEmptyState() {
+        if (isMyRecipes) {
+            b.tvEmptyTitle.text = "No recipes yet"
+            b.tvEmptySub.text   = "Start creating your first recipe!"
+            b.btnEmptyAction.text = "Create Recipe"
+            b.btnEmptyAction.setOnClickListener {
+                (requireActivity() as? MainActivity)?.openCreateRecipe()
+            }
+        } else {
+            b.tvEmptyTitle.text = "No saved recipes"
+            b.tvEmptySub.text   = "Tap ❤️ on any recipe to save it here"
+            b.btnEmptyAction.text = "Explore Recipes"
+            b.btnEmptyAction.setOnClickListener {
+                (requireActivity() as? MainActivity)?.switchToHome()
+            }
+        }
+    }
+
+    private fun reload() {
+        if (isMyRecipes) viewModel.loadMyRecipes() else viewModel.loadFavorites()
+    }
+
     private fun render(resource: Resource<List<Recipe>>) {
+        b.swipeRefresh.isRefreshing = resource is Resource.Loading
+
         when (resource) {
             is Resource.Loading -> {
                 b.shimmer.apply { startShimmer(); visibility = View.VISIBLE }
@@ -180,6 +215,7 @@ class RecipeListFragment : Fragment() {
             is Resource.Success -> {
                 b.shimmer.apply { stopShimmer(); visibility = View.GONE }
                 if (resource.data.isEmpty()) {
+                    // Show friendly empty state — never raw error
                     b.layoutEmpty.visibility = View.VISIBLE
                     b.rvRecipes.visibility   = View.GONE
                 } else {
@@ -189,17 +225,19 @@ class RecipeListFragment : Fragment() {
                 }
             }
             is Resource.Error -> {
+                // Show empty state with retry — don't expose the error message
                 b.shimmer.apply { stopShimmer(); visibility = View.GONE }
                 b.layoutEmpty.visibility = View.VISIBLE
-                b.tvEmptySub.text = resource.message
+                b.rvRecipes.visibility   = View.GONE
+                b.tvEmptySub.text = "Couldn't load. Pull down to retry."
             }
         }
     }
 
-    private fun openDetail(recipe: Recipe) {
+    private fun openDetail(recipeId: String) {
         val intent = android.content.Intent(requireContext(),
             com.example.finalyearproject.ui.recipe.RecipeDetailActivity::class.java)
-        intent.putExtra("recipeId", recipe.recipeId)
+        intent.putExtra("recipeId", recipeId)
         startActivity(intent)
     }
 

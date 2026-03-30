@@ -14,16 +14,26 @@ class ProfileViewModel : ViewModel() {
 
     private val repo = RecipeRepository.getInstance()
 
-    private val _myRecipes   = MutableLiveData<Resource<List<Recipe>>>()
-    val myRecipes: LiveData<Resource<List<Recipe>>> = _myRecipes
+    private val _myRecipes = androidx.lifecycle.MutableLiveData<Resource<List<Recipe>>>()
+    val myRecipes: androidx.lifecycle.LiveData<Resource<List<Recipe>>> = _myRecipes
 
-    private val _favorites   = MutableLiveData<Resource<List<Recipe>>>()
-    val favorites: LiveData<Resource<List<Recipe>>> = _favorites
+    private val _favorites = androidx.lifecycle.MutableLiveData<Resource<List<Recipe>>>()
+    val favorites: androidx.lifecycle.LiveData<Resource<List<Recipe>>> = _favorites
 
+    /**
+     * Uses the subcollection approach — completely avoids composite index.
+     * Falls back to the direct query if subcollection is empty.
+     */
     fun loadMyRecipes() {
         _myRecipes.value = Resource.Loading()
         viewModelScope.launch {
-            _myRecipes.value = repo.getMyRecipes()
+            // Try subcollection first (no index needed)
+            var result = repo.getMyRecipesViaSubcollection()
+            if (result is Resource.Success && result.data.isEmpty()) {
+                // Fallback: try direct query (works if no orderBy — our fixed version)
+                result = repo.getMyRecipes()
+            }
+            _myRecipes.value = result
         }
     }
 

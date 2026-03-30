@@ -1,20 +1,23 @@
 package com.example.finalyearproject.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.finalyearproject.R
+import com.example.finalyearproject.ui.create.CreateRecipeActivity
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.button.MaterialButton
 
 /**
  * CreateOptionsBottomSheet
  *
- * Shown when the center FAB is tapped.
- * Offers: Upload Recipe | Write Blog | (future: Upload Video)
+ * Opened by the centre FAB.
+ * Options:
+ *   1. Create Recipe → launches CreateRecipeActivity
+ *   2. Upload Video  → placeholder (shows Toast for now)
+ *   3. Write Blog    → placeholder (shows Toast for now)
  */
 class CreateOptionsBottomSheet : BottomSheetDialogFragment() {
 
@@ -26,13 +29,24 @@ class CreateOptionsBottomSheet : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<MaterialButton>(R.id.btn_upload_recipe)?.setOnClickListener {
+        // ── Option 1: Create Recipe ───────────────────────────────────────────
+        view.findViewById<View>(R.id.btn_upload_recipe)?.setOnClickListener {
             dismiss()
-            Toast.makeText(requireContext(), "Upload Recipe — coming soon", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(requireContext(), CreateRecipeActivity::class.java))
         }
-        view.findViewById<MaterialButton>(R.id.btn_write_blog)?.setOnClickListener {
+
+        // ── Option 2: Upload Video ────────────────────────────────────────────
+        view.findViewById<View>(R.id.btn_upload_video)?.setOnClickListener {
             dismiss()
-            Toast.makeText(requireContext(), "Write Blog — coming soon", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(),
+                "Video upload coming soon! 🎬", Toast.LENGTH_SHORT).show()
+        }
+
+        // ── Option 3: Write Blog ──────────────────────────────────────────────
+        view.findViewById<View>(R.id.btn_write_blog)?.setOnClickListener {
+            dismiss()
+            Toast.makeText(requireContext(),
+                "Blog writing coming soon! ✍️", Toast.LENGTH_SHORT).show()
         }
     }
 }

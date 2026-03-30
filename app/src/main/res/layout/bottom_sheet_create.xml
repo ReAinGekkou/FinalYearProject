@@ -5,8 +5,18 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="24dp"
+    android:paddingHorizontal="20dp"
+    android:paddingTop="20dp"
+    android:paddingBottom="28dp"
     android:background="@color/white">
+
+    <!-- Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="@color/bg_divider" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -15,30 +25,180 @@
         android:textSize="18sp"
         android:fontFamily="sans-serif-bold"
         android:textColor="@color/text_primary"
-        android:layout_marginBottom="20dp" />
+        android:layout_marginBottom="16dp" />
 
-    <com.google.android.material.button.MaterialButton
+    <!-- Create Recipe -->
+    <LinearLayout
         android:id="@+id/btn_upload_recipe"
         android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:text="🍳  Upload Recipe"
-        android:textSize="15sp"
-        android:textColor="@color/text_primary"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        app:strokeColor="@color/bg_divider"
-        app:cornerRadius="12dp"
-        android:layout_marginBottom="12dp" />
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
 
-    <com.google.android.material.button.MaterialButton
+        <TextView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:text="🍳"
+            android:textSize="20sp"
+            android:gravity="center" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Create Recipe"
+                android:textSize="15sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/text_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Share your cooking with the world"
+                android:textSize="12sp"
+                android:textColor="@color/text_hint" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_arrow_back"
+            android:rotation="180"
+            app:tint="@color/text_hint" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/bg_divider"
+        android:layout_marginVertical="4dp" />
+
+    <!-- Upload Video -->
+    <LinearLayout
+        android:id="@+id/btn_upload_video"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:text="🎬"
+            android:textSize="20sp"
+            android:gravity="center" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Upload Video"
+                android:textSize="15sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/text_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Show your cooking process"
+                android:textSize="12sp"
+                android:textColor="@color/text_hint" />
+
+        </LinearLayout>
+
+        <com.google.android.material.chip.Chip
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:text="Soon"
+            android:textSize="10sp"
+            android:textColor="@color/text_hint"
+            app:chipBackgroundColor="@color/bg_divider"
+            app:chipMinHeight="24dp"
+            app:chipStrokeWidth="0dp" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/bg_divider"
+        android:layout_marginVertical="4dp" />
+
+    <!-- Write Blog -->
+    <LinearLayout
         android:id="@+id/btn_write_blog"
         android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:text="✍️  Write Blog Post"
-        android:textSize="15sp"
-        android:textColor="@color/text_primary"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        app:strokeColor="@color/bg_divider"
-        app:cornerRadius="12dp"
-        android:layout_marginBottom="8dp" />
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:text="✍️"
+            android:textSize="20sp"
+            android:gravity="center" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Write Blog Post"
+                android:textSize="15sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/text_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Share food stories and tips"
+                android:textSize="12sp"
+                android:textColor="@color/text_hint" />
+
+        </LinearLayout>
+
+        <com.google.android.material.chip.Chip
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:text="Soon"
+            android:textSize="10sp"
+            android:textColor="@color/text_hint"
+            app:chipBackgroundColor="@color/bg_divider"
+            app:chipMinHeight="24dp"
+            app:chipStrokeWidth="0dp" />
+
+    </LinearLayout>
 
 </LinearLayout>
