@@ -8,6 +8,7 @@
 
     <!-- Toolbar -->
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/white"
@@ -21,15 +22,13 @@
             app:title="Create Recipe"
             app:titleTextColor="@color/text_primary" />
 
-        <!-- Step indicator -->
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/progress_step"
             android:layout_width="match_parent"
-            android:layout_height="4dp"
+            android:layout_height="wrap_content"
             android:progress="33"
             app:trackColor="@color/bg_divider"
-            app:indicatorColor="@color/brand_primary"
-            app:trackCornerRadius="2dp" />
+            app:indicatorColor="@color/brand_primary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -37,11 +36,8 @@
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/vp_steps"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:userInputEnabled="false"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:layout_constraintBottom_toTopOf="@id/btn_next" />
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
     <!-- Bottom navigation buttons -->
     <LinearLayout
@@ -53,8 +49,7 @@
         android:background="@color/white"
         android:elevation="8dp"
         android:gravity="end"
-        app:layout_anchor="@id/vp_steps"
-        app:layout_anchorGravity="bottom">
+        android:layout_gravity="bottom">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_back_step"

@@ -241,7 +241,7 @@ class Step2Fragment : Fragment() {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ).also { it.bottomMargin = (8 * resources.displayMetrics.density).toInt() }
             this.hint = hint
-            boxCornerRadii = floatArrayOf(12f, 12f, 12f, 12f, 12f, 12f, 12f, 12f)
+            setBoxCornerRadii(12f, 12f, 12f, 12f)
         }
         val et = TextInputEditText(ctx).apply {
             layoutParams = ViewGroup.LayoutParams(
