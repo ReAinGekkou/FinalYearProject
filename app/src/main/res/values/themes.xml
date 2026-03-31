@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         Base application theme
-         ══════════════════════════════════════════════════════════════════════ -->
-    <style name="Theme.AIFoodApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.AIFoodApp" parent="Theme.MaterialComponents.Light.NoActionBar">
 
         <!-- Brand colors -->
         <item name="colorPrimary">@color/brand_primary</item>
@@ -33,8 +30,8 @@
         <!-- Navigation bar -->
         <item name="android:navigationBarColor">@color/bg_screen</item>
 
-        <!-- Typography -->
-        <item name="android:fontFamily">@font/inter</item>
+        <!-- Typography — font Inter tạm thời tắt vì chưa có file font -->
+        <!-- <item name="android:fontFamily">@font/inter</item> -->
 
         <!-- Shape -->
         <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.AIFoodApp.MediumComponent</item>
@@ -48,9 +45,7 @@
 
     </style>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         Shape appearances
-         ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Shape appearances -->
     <style name="ShapeAppearance.AIFoodApp.MediumComponent" parent="ShapeAppearance.MaterialComponents.MediumComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">12dp</item>
@@ -66,9 +61,7 @@
         <item name="cornerSize">50%</item>
     </style>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         TextInputLayout styles
-         ══════════════════════════════════════════════════════════════════════ -->
+    <!-- TextInputLayout styles -->
     <style name="Widget.AIFoodApp.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
         <item name="boxCornerRadiusTopStart">12dp</item>
         <item name="boxCornerRadiusTopEnd">12dp</item>
@@ -80,9 +73,7 @@
         <item name="android:paddingTop">4dp</item>
     </style>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         Button styles
-         ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Button styles -->
     <style name="Widget.AIFoodApp.Button.Primary" parent="Widget.MaterialComponents.Button">
         <item name="backgroundTint">@color/brand_primary</item>
         <item name="android:textColor">@color/white</item>
@@ -112,9 +103,7 @@
         <item name="iconPadding">0dp</item>
     </style>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         Card style
-         ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Card style -->
     <style name="Widget.AIFoodApp.Card" parent="Widget.MaterialComponents.CardView">
         <item name="cardCornerRadius">12dp</item>
         <item name="cardElevation">2dp</item>
@@ -123,9 +112,7 @@
         <item name="android:layout_marginBottom">12dp</item>
     </style>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         Typography
-         ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Typography -->
     <style name="TextAppearance.AIFoodApp.H1" parent="TextAppearance.MaterialComponents.Headline4">
         <item name="android:textSize">28sp</item>
         <item name="android:textColor">@color/text_primary</item>
@@ -162,18 +149,14 @@
         <item name="android:textColor">@color/text_hint</item>
     </style>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         Toolbar
-         ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Toolbar -->
     <style name="Widget.AIFoodApp.Toolbar" parent="Widget.MaterialComponents.Toolbar">
         <item name="android:background">@color/bg_screen</item>
         <item name="android:elevation">0dp</item>
         <item name="titleTextAppearance">@style/TextAppearance.AIFoodApp.H3</item>
     </style>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         Search bar
-         ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Search bar -->
     <style name="Widget.AIFoodApp.SearchInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
         <item name="boxCornerRadiusTopStart">24dp</item>
         <item name="boxCornerRadiusTopEnd">24dp</item>
@@ -185,9 +168,7 @@
         <item name="hintTextColor">@color/text_hint</item>
     </style>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         Chat input
-         ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Chat input -->
     <style name="Widget.AIFoodApp.ChatInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
         <item name="boxCornerRadiusTopStart">24dp</item>
         <item name="boxCornerRadiusTopEnd">24dp</item>
