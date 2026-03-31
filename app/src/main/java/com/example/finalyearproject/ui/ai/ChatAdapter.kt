@@ -1,151 +1,185 @@
 package com.example.finalyearproject.ui.ai
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.example.finalyearproject.R
 import com.example.finalyearproject.databinding.ItemChatAiBinding
+import com.example.finalyearproject.databinding.ItemChatTypingBinding
 import com.example.finalyearproject.databinding.ItemChatUserBinding
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
- * ChatAdapter — Day 5
+ * ChatAdapter
  *
- * Two view types: VIEW_TYPE_USER and VIEW_TYPE_AI.
- * Uses ListAdapter + DiffUtil for efficient updates.
- * Auto-scrolls to newest message when list updates.
+ * Three view types:
+ *   VIEW_USER   — right-aligned green bubble
+ *   VIEW_AI     — left-aligned grey bubble with avatar
+ *   VIEW_TYPING — animated 3-dot typing indicator
+ *
+ * Usage:
+ *   adapter.submitList(messages)
+ *   // To show typing: adapter.showTyping()
+ *   // To hide typing: adapter.hideTyping()
  */
-class ChatAdapter(
-    private val onShowRecipeClick: ((ChatMessage) -> Unit)? = null,
-    private val onNutritionClick: ((ChatMessage) -> Unit)? = null
-) : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCallback()) {
+class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DiffCallback()) {
 
-    override fun getItemViewType(position: Int): Int =
-        if (getItem(position).isFromUser) VIEW_TYPE_USER else VIEW_TYPE_AI
+    private val messages = mutableListOf<ChatMessage>()
+    private var isShowingTyping = false
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return when (viewType) {
-            VIEW_TYPE_USER -> {
-                val binding = ItemChatUserBinding.inflate(
-                    LayoutInflater.from(parent.context), parent, false
-                )
-                UserViewHolder(binding)
-            }
-            else -> {
-                val binding = ItemChatAiBinding.inflate(
-                    LayoutInflater.from(parent.context), parent, false
-                )
-                AiViewHolder(binding)
-            }
+    // ── Submit helpers ────────────────────────────────────────────────────────
+
+    override fun submitList(list: List<ChatMessage>?) {
+        messages.clear()
+        if (list != null) messages.addAll(list)
+        if (isShowingTyping) messages.add(ChatMessage.typing())
+        super.submitList(messages.toList())
+    }
+
+    fun addMessage(msg: ChatMessage) {
+        val newList = currentList.toMutableList()
+        // Remove any existing typing indicator before adding real message
+        newList.removeAll { it.isTyping }
+        isShowingTyping = false
+        newList.add(msg)
+        super.submitList(newList)
+    }
+
+    fun showTyping() {
+        if (isShowingTyping) return
+        isShowingTyping = true
+        val newList = currentList.toMutableList()
+        newList.add(ChatMessage.typing())
+        super.submitList(newList)
+    }
+
+    fun hideTyping() {
+        if (!isShowingTyping) return
+        isShowingTyping = false
+        val newList = currentList.toMutableList()
+        newList.removeAll { it.isTyping }
+        super.submitList(newList)
+    }
+
+    // ── ViewType ──────────────────────────────────────────────────────────────
+
+    override fun getItemViewType(position: Int): Int {
+        val msg = getItem(position)
+        return when {
+            msg.isTyping    -> VIEW_TYPING
+            msg.isFromUser  -> VIEW_USER
+            else            -> VIEW_AI
         }
     }
+
+    // ── onCreateViewHolder ────────────────────────────────────────────────────
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return when (viewType) {
+            VIEW_USER   -> UserVH(ItemChatUserBinding.inflate(inflater, parent, false))
+            VIEW_TYPING -> TypingVH(ItemChatTypingBinding.inflate(inflater, parent, false))
+            else        -> AiVH(ItemChatAiBinding.inflate(inflater, parent, false))
+        }
+    }
+
+    // ── onBindViewHolder ──────────────────────────────────────────────────────
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
-            is UserViewHolder -> holder.bind(getItem(position))
-            is AiViewHolder   -> holder.bind(getItem(position))
+            is UserVH   -> holder.bind(getItem(position))
+            is AiVH     -> holder.bind(getItem(position))
+            is TypingVH -> holder.startAnimation()
         }
     }
 
-    // ── User ViewHolder ───────────────────────────────────────────────────────
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+        if (holder is TypingVH) holder.stopAnimation()
+        super.onViewRecycled(holder)
+    }
 
-    inner class UserViewHolder(
-        private val binding: ItemChatUserBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
+    // ── ViewHolder: User ──────────────────────────────────────────────────────
 
-        fun bind(message: ChatMessage) {
-            binding.tvMessage.text = message.text
-            binding.tvTimestamp.text = formatTime(message.timestamp)
+    inner class UserVH(private val b: ItemChatUserBinding) :
+        RecyclerView.ViewHolder(b.root) {
+
+        fun bind(msg: ChatMessage) {
+            b.tvMessage.text   = msg.text
+            b.tvTimestamp.text = msg.timeLabel
         }
     }
 
-    // ── AI ViewHolder ─────────────────────────────────────────────────────────
+    // ── ViewHolder: AI ────────────────────────────────────────────────────────
 
-    inner class AiViewHolder(
-        private val binding: ItemChatAiBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
+    inner class AiVH(private val b: ItemChatAiBinding) :
+        RecyclerView.ViewHolder(b.root) {
 
-        init {
-            binding.btnActionRecipe.setOnClickListener {
-                val position = bindingAdapterPosition
-                if (position != RecyclerView.NO_ID.toInt()) {
-                    onShowRecipeClick?.invoke(getItem(position))
+        fun bind(msg: ChatMessage) {
+            b.tvMessage.text   = msg.text
+            b.tvTimestamp.text = msg.timeLabel
+
+            // Error/fallback messages get an amber tint + italic text
+            if (msg.isError) {
+                b.cardBubble.setCardBackgroundColor(Color.parseColor("#FFF8E1"))
+                b.tvMessage.setTextColor(Color.parseColor("#5D4037"))
+                b.tvSenderLabel.text = "Food AI ⚠️"
+            } else {
+                b.cardBubble.setCardBackgroundColor(Color.parseColor("#F1F3F4"))
+                b.tvMessage.setTextColor(Color.parseColor("#212121"))
+                b.tvSenderLabel.text = "Food AI"
+            }
+        }
+    }
+
+    // ── ViewHolder: Typing ────────────────────────────────────────────────────
+
+    inner class TypingVH(private val b: ItemChatTypingBinding) :
+        RecyclerView.ViewHolder(b.root) {
+
+        private var animatorSet: AnimatorSet? = null
+
+        fun startAnimation() {
+            stopAnimation()
+            val dots = listOf(b.dot1, b.dot2, b.dot3)
+            val set  = AnimatorSet()
+            val anims = dots.mapIndexed { index, dot ->
+                val up = ObjectAnimator.ofFloat(dot, View.TRANSLATION_Y, 0f, -8f, 0f).apply {
+                    duration    = 600
+                    startDelay  = index * 160L
+                    repeatCount = ObjectAnimator.INFINITE
+                    interpolator = AccelerateDecelerateInterpolator()
                 }
+                up
             }
-            binding.btnActionNutrition.setOnClickListener {
-                val position = bindingAdapterPosition
-                if (position != RecyclerView.NO_ID.toInt()) {
-                    onNutritionClick?.invoke(getItem(position))
-                }
-            }
+            set.playTogether(*anims.toTypedArray())
+            set.start()
+            animatorSet = set
         }
 
-        fun bind(message: ChatMessage) {
-            // Simple markdown-bold: **text** → SpannableString
-            binding.tvMessage.text = formatMarkdown(message.text)
-            binding.tvTimestamp.text = formatTime(message.timestamp)
-
-            // Show action buttons only for recipe-type AI responses
-            val showActions = message.hasActions
-            binding.layoutActions.visibility =
-                if (showActions) android.view.View.VISIBLE else android.view.View.GONE
-        }
-
-        /**
-         * Minimal markdown renderer for **bold** text.
-         * For production, use a library like `Markwon`.
-         */
-        private fun formatMarkdown(text: String): CharSequence {
-            if (!text.contains("**")) return text
-            val spannable = android.text.SpannableStringBuilder(text)
-            val pattern = Regex("\\*\\*(.+?)\\*\\*")
-            var offset = 0
-            pattern.findAll(text).forEach { match ->
-                val start = match.range.first - offset
-                val end = match.range.last + 1 - offset
-                val content = match.groupValues[1]
-                spannable.replace(start, end, content)
-                spannable.setSpan(
-                    android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-                    start,
-                    start + content.length,
-                    android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-                offset += (match.value.length - content.length)
-            }
-            return spannable
+        fun stopAnimation() {
+            animatorSet?.cancel()
+            animatorSet = null
+            listOf(b.dot1, b.dot2, b.dot3).forEach { it.translationY = 0f }
         }
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-
-    private fun formatTime(timestamp: Long): String =
-        timeFormat.format(Date(timestamp))
 
     // ── DiffCallback ──────────────────────────────────────────────────────────
 
-    private class ChatDiffCallback : DiffUtil.ItemCallback<ChatMessage>() {
-        override fun areItemsTheSame(old: ChatMessage, new: ChatMessage) = old.id == new.id
-        override fun areContentsTheSame(old: ChatMessage, new: ChatMessage) = old == new
+    class DiffCallback : DiffUtil.ItemCallback<ChatMessage>() {
+        override fun areItemsTheSame(a: ChatMessage, b: ChatMessage) = a.id == b.id
+        override fun areContentsTheSame(a: ChatMessage, b: ChatMessage) = a == b
     }
 
     companion object {
-        private const val VIEW_TYPE_USER = 1
-        private const val VIEW_TYPE_AI   = 2
+        private const val VIEW_USER   = 0
+        private const val VIEW_AI     = 1
+        private const val VIEW_TYPING = 2
     }
 }
-
-// ── Data model for chat messages ──────────────────────────────────────────────
-
-data class ChatMessage(
-    val id: String = java.util.UUID.randomUUID().toString(),
-    val text: String,
-    val isFromUser: Boolean,
-    val timestamp: Long = System.currentTimeMillis(),
-    val hasActions: Boolean = false   // true if AI response includes recipe actions
-)

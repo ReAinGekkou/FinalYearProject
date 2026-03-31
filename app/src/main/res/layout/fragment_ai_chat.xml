@@ -1,20 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    fragment_ai_chat.xml
+    Full-height ChatGPT-style layout:
+      • Empty state (shown when no messages)
+      • RecyclerView (messages, stackFromEnd = true)
+      • Suggestion chips row
+      • Pill-shaped input + send button
+    windowSoftInputMode="adjustResize" in Manifest handles keyboard push-up.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_screen">
 
-    <!-- Quick suggestion chips -->
-    <HorizontalScrollView
-        android:id="@+id/hsv_suggestions"
+    <!-- ── Toolbar ───────────────────────────────────────────────────────── -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="8dp"
-        android:scrollbars="none"
-        android:overScrollMode="never"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/white"
+        android:elevation="2dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -22,117 +30,221 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_suggest"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:text="🍳 Suggest recipe"
-                style="@style/Widget.MaterialComponents.Chip.Action"
-                app:chipBackgroundColor="@color/white"
-                app:chipStrokeColor="@color/brand_primary"
-                app:chipStrokeWidth="1dp"
-                android:textColor="@color/brand_primary"
-                android:textSize="12sp" />
+            <com.google.android.material.imageview.ShapeableImageView
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:src="@drawable/ic_ai_avatar"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.AIFoodApp.Pill" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_calories"
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_marginStart="8dp"
-                android:text="🔥 Calories"
-                style="@style/Widget.MaterialComponents.Chip.Action"
-                app:chipBackgroundColor="@color/white"
-                app:chipStrokeColor="@color/brand_primary"
-                app:chipStrokeWidth="1dp"
-                android:textColor="@color/brand_primary"
-                android:textSize="12sp" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="10dp">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_quick_meal"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_marginStart="8dp"
-                android:text="⚡ Quick meals"
-                style="@style/Widget.MaterialComponents.Chip.Action"
-                app:chipBackgroundColor="@color/white"
-                app:chipStrokeColor="@color/brand_primary"
-                app:chipStrokeWidth="1dp"
-                android:textColor="@color/brand_primary"
-                android:textSize="12sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Food AI"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif-bold"
+                    android:textColor="@color/text_primary" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_nutrition"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_marginStart="8dp"
-                android:text="🥗 Nutrition tips"
-                style="@style/Widget.MaterialComponents.Chip.Action"
-                app:chipBackgroundColor="@color/white"
-                app:chipStrokeColor="@color/brand_primary"
-                app:chipStrokeWidth="1dp"
-                android:textColor="@color/brand_primary"
-                android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/tv_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ready to help"
+                    android:textSize="11sp"
+                    android:textColor="#4CAF50" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-    </HorizontalScrollView>
+    </androidx.appcompat.widget.Toolbar>
 
-    <!-- Chat messages -->
+    <!-- ── Empty state ────────────────────────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/layout_empty"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingHorizontal="32dp"
+        android:visibility="visible"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toTopOf="@id/layout_suggestions"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="visible">
+
+        <!-- Animated plate icon -->
+        <ImageView
+            android:id="@+id/iv_empty_icon"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/ic_ai_avatar"
+            android:alpha="0.85"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Ask me anything about food 🍜"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-bold"
+            android:textColor="@color/text_primary"
+            android:gravity="center"
+            android:lineSpacingMultiplier="1.3" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Recipes · Nutrition · Cooking tips"
+            android:textSize="13sp"
+            android:textColor="@color/text_hint"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+    <!-- ── Messages RecyclerView ──────────────────────────────────────────── -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_chat"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
         android:overScrollMode="never"
+        android:scrollbars="none"
+        android:visibility="gone"
         app:stackFromEnd="true"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintTop_toBottomOf="@id/hsv_suggestions"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toTopOf="@id/layout_suggestions"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/item_chat_ai"
+        tools:itemCount="4"
+        tools:visibility="visible" />
+
+    <!-- ── Suggestion chips ───────────────────────────────────────────────── -->
+    <HorizontalScrollView
+        android:id="@+id/layout_suggestions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp"
+        android:scrollbars="none"
+        android:overScrollMode="never"
+        android:background="@color/bg_screen"
+        app:layout_constraintBottom_toTopOf="@id/divider_input"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:id="@+id/chip_row"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_suggest"
+                style="@style/Widget.MaterialComponents.Chip.Action"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🍳 Suggest recipe"
+                android:textSize="12sp"
+                android:textColor="@color/brand_primary"
+                app:chipBackgroundColor="#E8F5E9"
+                app:chipStrokeColor="@color/brand_primary"
+                app:chipStrokeWidth="1dp"
+                app:chipCornerRadius="17dp"
+                app:chipMinHeight="34dp"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_calories"
+                style="@style/Widget.MaterialComponents.Chip.Action"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🔥 Calories"
+                android:textSize="12sp"
+                android:textColor="@color/brand_primary"
+                app:chipBackgroundColor="#E8F5E9"
+                app:chipStrokeColor="@color/brand_primary"
+                app:chipStrokeWidth="1dp"
+                app:chipCornerRadius="17dp"
+                app:chipMinHeight="34dp"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_quick"
+                style="@style/Widget.MaterialComponents.Chip.Action"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="⚡ Quick meals"
+                android:textSize="12sp"
+                android:textColor="@color/brand_primary"
+                app:chipBackgroundColor="#E8F5E9"
+                app:chipStrokeColor="@color/brand_primary"
+                app:chipStrokeWidth="1dp"
+                app:chipCornerRadius="17dp"
+                app:chipMinHeight="34dp"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_nutrition"
+                style="@style/Widget.MaterialComponents.Chip.Action"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🥗 Nutrition"
+                android:textSize="12sp"
+                android:textColor="@color/brand_primary"
+                app:chipBackgroundColor="#E8F5E9"
+                app:chipStrokeColor="@color/brand_primary"
+                app:chipStrokeWidth="1dp"
+                app:chipCornerRadius="17dp"
+                app:chipMinHeight="34dp" />
+
+        </LinearLayout>
+
+    </HorizontalScrollView>
+
+    <!-- ── Top border of input bar ────────────────────────────────────────── -->
+    <View
+        android:id="@+id/divider_input"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#EEEEEE"
         app:layout_constraintBottom_toTopOf="@id/layout_input"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Typing indicator -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_typing"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginBottom="4dp"
-        android:visibility="gone"
-        app:cardCornerRadius="16dp"
-        app:cardBackgroundColor="@color/white"
-        app:cardElevation="1dp"
-        app:strokeColor="@color/bg_divider"
-        app:strokeWidth="1dp"
-        app:layout_constraintBottom_toTopOf="@id/layout_input"
-        app:layout_constraintStart_toStartOf="parent">
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="10dp"
-            android:text="●  ●  ●"
-            android:textColor="@color/text_hint"
-            android:textSize="10sp" />
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Input area -->
+    <!-- ── Input area ─────────────────────────────────────────────────────── -->
     <LinearLayout
         android:id="@+id/layout_input"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="10dp"
         android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="12dp"
         android:background="@color/white"
-        android:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- Pill input field -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_message"
             android:layout_width="0dp"
@@ -140,42 +252,52 @@
             android:layout_weight="1"
             android:hint="Ask about food…"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            app:boxCornerRadiusTopStart="22dp"
-            app:boxCornerRadiusTopEnd="22dp"
-            app:boxCornerRadiusBottomStart="22dp"
-            app:boxCornerRadiusBottomEnd="22dp"
-            app:boxStrokeColor="@color/bg_divider"
-            app:boxStrokeWidth="1dp">
+            app:boxCornerRadiusTopStart="24dp"
+            app:boxCornerRadiusTopEnd="24dp"
+            app:boxCornerRadiusBottomStart="24dp"
+            app:boxCornerRadiusBottomEnd="24dp"
+            app:boxStrokeColor="#E0E0E0"
+            app:boxStrokeWidth="1.5dp"
+            app:boxStrokeWidthFocused="1.5dp"
+            app:hintTextColor="@color/text_hint"
+            app:boxBackgroundColor="@color/white">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_message"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textMultiLine|textCapSentences"
-                android:maxLines="3"
+                android:maxLines="4"
+                android:minLines="1"
                 android:imeOptions="actionSend"
                 android:textColor="#212121"
-                android:textSize="14sp"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp" />
+                android:textColorHint="#9E9E9E"
+                android:textSize="15sp"
+                android:background="@null"
+                android:paddingTop="11dp"
+                android:paddingBottom="11dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Send button — circular green -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_send"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
             android:layout_marginStart="8dp"
             android:padding="0dp"
-            app:icon="@drawable/ic_send"
-            app:iconTint="@color/white"
-            app:iconSize="18dp"
-            app:iconPadding="0dp"
             android:minWidth="0dp"
             android:minHeight="0dp"
+            app:icon="@drawable/ic_send"
+            app:iconTint="@color/white"
+            app:iconSize="20dp"
+            app:iconPadding="0dp"
             app:backgroundTint="@color/brand_primary"
-            app:cornerRadius="22dp"
-            android:stateListAnimator="@null" />
+            app:cornerRadius="23dp"
+            android:stateListAnimator="@null"
+            app:elevation="2dp" />
 
     </LinearLayout>
 

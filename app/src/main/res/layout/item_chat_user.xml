@@ -1,51 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_chat_user.xml
+    Right-aligned green bubble — user messages.
+    Max width: 78% of parent. Rounded pill shape.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingBottom="8dp">
+    android:paddingStart="48dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
 
-    <!-- Bubble — max 72% of screen width, right aligned -->
+    <!-- Bubble -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_bubble"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:cardCornerRadius="18dp"
-        app:cardBackgroundColor="@color/bubble_user"
+        app:cardBackgroundColor="#2E7D32"
         app:cardElevation="0dp"
         app:strokeWidth="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constrainedWidth="true"
-        app:layout_constraintWidth_percent="0.72">
+        app:layout_constraintWidth_percent="0.78">
 
-        <TextView
-            android:id="@+id/tv_message"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="10dp"
-            android:textColor="@color/bubble_text_user"
-            android:textAppearance="@style/TextAppearance.AIFoodApp.Body1"
-            android:textSize="15sp"
-            android:lineSpacingMultiplier="1.4"
-            tools:text="What should I eat tonight? I have chicken and some vegetables." />
+            android:orientation="vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/tv_message"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:lineSpacingMultiplier="1.4"
+                android:fontFamily="sans-serif"
+                tools:text="What can I make with chicken and rice?" />
+
+            <TextView
+                android:id="@+id/tv_timestamp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_gravity="end"
+                android:textColor="#AAFFFFFF"
+                android:textSize="10sp"
+                tools:text="2:30 PM" />
+
+        </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
-
-    <!-- Timestamp -->
-    <TextView
-        android:id="@+id/tv_timestamp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:layout_marginEnd="4dp"
-        android:textAppearance="@style/TextAppearance.AIFoodApp.Caption"
-        android:textSize="11sp"
-        app:layout_constraintTop_toBottomOf="@id/card_bubble"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:text="2:30 PM" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
