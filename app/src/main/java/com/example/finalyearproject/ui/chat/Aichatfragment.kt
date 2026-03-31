@@ -1,46 +1,32 @@
 package com.example.finalyearproject.ui.chat
 
+import android.content.Context
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.finalyearproject.data.remote.ai.AIService
 import com.example.finalyearproject.databinding.FragmentAiChatBinding
 import com.example.finalyearproject.ui.ai.ChatAdapter
-import com.example.finalyearproject.ui.ai.ChatMessage
-import com.example.finalyearproject.utils.Resource
-import kotlinx.coroutines.launch
 
-/**
- * AiChatFragment
- *
- * Features:
- *  • Empty state with greeting when no messages
- *  • Animated 3-dot typing indicator while AI is thinking
- *  • Real Gemini API call via AIService
- *  • Context-aware fallback if API is unavailable
- *  • Error messages shown as amber-tinted AI bubbles (not raw text)
- *  • Send button disabled while loading
- *  • Keyboard-aware layout (windowSoftInputMode = adjustResize)
- */
 class AiChatFragment : Fragment() {
 
     private var _b: FragmentAiChatBinding? = null
     private val b get() = _b!!
 
     private lateinit var viewModel: ChatViewModel
-    private lateinit var adapter : ChatAdapter
+    private lateinit var adapter: ChatAdapter
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, state: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _b = FragmentAiChatBinding.inflate(inflater, container, false)
         return b.root
@@ -49,7 +35,7 @@ class AiChatFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Share ViewModel with parent (ChatFragment) so messages persist on tab switch
+        // Share ViewModel với parent ChatFragment → tin nhắn sống qua tab switch
         viewModel = ViewModelProvider(requireParentFragment())[ChatViewModel::class.java]
 
         setupRecyclerView()
@@ -58,48 +44,58 @@ class AiChatFragment : Fragment() {
         observeViewModel()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _b = null
+    }
+
     // ── RecyclerView ──────────────────────────────────────────────────────────
 
     private fun setupRecyclerView() {
         adapter = ChatAdapter()
+        // rv_chat → b.rvChat
         b.rvChat.apply {
-            this.adapter = adapter
-            layoutManager = LinearLayoutManager(context).apply { stackFromEnd = true }
-            itemAnimator = null   // disable default flicker animation
+            this.adapter  = adapter
+            layoutManager = LinearLayoutManager(requireContext()).apply {
+                stackFromEnd = true
+            }
+            itemAnimator = null
         }
     }
 
-    // ── Input wiring ──────────────────────────────────────────────────────────
+    // ── Input ─────────────────────────────────────────────────────────────────
 
     private fun setupInput() {
+        // btn_send → b.btnSend
         b.btnSend.setOnClickListener { sendMessage() }
 
+        // et_message → b.etMessage
         b.etMessage.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEND) {
-                sendMessage()
-                true
-            } else false
+            if (actionId == EditorInfo.IME_ACTION_SEND) { sendMessage(); true } else false
         }
 
-        // Enable / disable send based on content
-        b.etMessage.addTextChangedListener(object : android.text.TextWatcher {
+        b.etMessage.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
-            override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {
-                updateSendButton(s?.toString()?.isNotBlank() == true)
+            override fun onTextChanged(s: CharSequence?, st: Int, b2: Int, c: Int) {
+                setSendEnabled(s?.toString()?.isNotBlank() == true)
             }
-            override fun afterTextChanged(s: android.text.Editable?) {}
+            override fun afterTextChanged(s: Editable?) {}
         })
 
-        updateSendButton(false)
+        setSendEnabled(false)
     }
 
-    private fun updateSendButton(hasText: Boolean) {
-        val loading = viewModel.isTyping.value == true
-        b.btnSend.isEnabled = hasText && !loading
+    private fun setSendEnabled(hasText: Boolean) {
+        val isLoading   = viewModel.isTyping.value == true
+        b.btnSend.isEnabled = hasText && !isLoading
         b.btnSend.alpha     = if (b.btnSend.isEnabled) 1f else 0.45f
     }
 
     // ── Suggestion chips ──────────────────────────────────────────────────────
+    // chip_suggest    → b.chipSuggest
+    // chip_calories   → b.chipCalories
+    // chip_quick      → b.chipQuick
+    // chip_nutrition  → b.chipNutrition
 
     private fun setupChips() {
         b.chipSuggest.setOnClickListener {
@@ -117,9 +113,11 @@ class AiChatFragment : Fragment() {
     }
 
     private fun prefill(text: String) {
-        b.etMessage.setText(text)
-        b.etMessage.setSelection(text.length)
-        b.etMessage.requestFocus()
+        b.etMessage.apply {
+            setText(text)
+            setSelection(text.length)
+            requestFocus()
+        }
     }
 
     // ── Send ──────────────────────────────────────────────────────────────────
@@ -127,10 +125,9 @@ class AiChatFragment : Fragment() {
     private fun sendMessage() {
         val text = b.etMessage.text?.toString()?.trim() ?: return
         if (text.isBlank()) return
-
         b.etMessage.setText("")
         hideKeyboard()
-        viewModel.sendMessage(text)
+        viewModel.sendMessage(text)    // ViewModel xử lý AI — KHÔNG Firestore
     }
 
     // ── Observe ───────────────────────────────────────────────────────────────
@@ -140,14 +137,15 @@ class AiChatFragment : Fragment() {
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
             val hasMessages = messages.any { !it.isTyping }
 
-            // Toggle empty state vs message list
+            // layout_empty → b.layoutEmpty
             b.layoutEmpty.visibility = if (hasMessages) View.GONE else View.VISIBLE
+            // rv_chat → b.rvChat
             b.rvChat.visibility      = if (hasMessages) View.VISIBLE else View.GONE
 
-            // Hide suggestion chips once the user has started chatting
-            b.layoutSuggestions.visibility = if (hasMessages) View.GONE else View.VISIBLE
+            // ✅ layout_suggestions → b.layoutSuggestions — LUÔN VISIBLE, không bao giờ GONE
+            b.layoutSuggestions.visibility = View.VISIBLE
 
-            adapter.submitList(messages) {
+            adapter.submitList(messages.toList()) {
                 if (messages.isNotEmpty()) {
                     b.rvChat.scrollToPosition(messages.size - 1)
                 }
@@ -155,29 +153,27 @@ class AiChatFragment : Fragment() {
         }
 
         viewModel.isTyping.observe(viewLifecycleOwner) { typing ->
+            // ✅ card_typing → b.cardTyping — ID đã được thêm vào XML
+            b.cardTyping.visibility = if (typing) View.VISIBLE else View.GONE
+
+            // tv_status → b.tvStatus
             b.tvStatus.text = if (typing) "Thinking…" else "Ready to help"
             b.tvStatus.setTextColor(
-                if (typing) resources.getColor(android.R.color.holo_orange_dark, null)
-                else resources.getColor(android.R.color.holo_green_dark, null)
+                if (typing)
+                    resources.getColor(android.R.color.holo_orange_dark, null)
+                else
+                    resources.getColor(android.R.color.holo_green_dark, null)
             )
 
-            if (typing) adapter.showTyping() else adapter.hideTyping()
-            updateSendButton(b.etMessage.text?.isNotBlank() == true)
+            setSendEnabled(b.etMessage.text?.isNotBlank() == true)
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Keyboard ──────────────────────────────────────────────────────────────
 
     private fun hideKeyboard() {
-        val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
-                as InputMethodManager
+        val imm = requireContext()
+            .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(b.etMessage.windowToken, 0)
     }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _b = null
-    }
 }
-
-

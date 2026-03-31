@@ -11,59 +11,62 @@ import kotlinx.coroutines.launch
 
 class ChatViewModel : ViewModel() {
 
-    private val _messages  = MutableLiveData<MutableList<ChatMessage>>(
-        mutableListOf()
-    )
-    val messages: LiveData<MutableList<ChatMessage>> = _messages
+    // ✅ List immutable — mỗi update tạo reference MỚI → observer luôn fire
+    private val _messages = MutableLiveData<List<ChatMessage>>(emptyList())
+    val messages: LiveData<List<ChatMessage>> = _messages
 
     private val _isTyping = MutableLiveData(false)
     val isTyping: LiveData<Boolean> = _isTyping
 
     private val aiService = AIService.getInstance()
 
-    /**
-     * Sends the user message and fetches an AI reply.
-     *
-     * Flow:
-     *  1. Add user bubble immediately
-     *  2. Show typing indicator
-     *  3. Await AIService.askFoodQuestion()
-     *  4. Remove typing indicator
-     *  5. Add AI reply (or styled fallback on error)
-     */
     fun sendMessage(text: String) {
-        val list = _messages.value ?: mutableListOf()
-        list.add(ChatMessage(text = text, isFromUser = true))
-        _messages.value = list
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return
 
+        // ✅ setValue trên main thread — hiển thị user message ngay lập tức
+        _messages.value = _messages.value.orEmpty() + ChatMessage(
+            text       = trimmed,
+            isFromUser = true
+        )
         _isTyping.value = true
 
         viewModelScope.launch {
-            val result = aiService.askFoodQuestion(text)
+            // ✅ Snapshot TRƯỚC khi suspend — tránh race condition
+            val snapshot = _messages.value.orEmpty()
 
-            _isTyping.postValue(false)
+            val result = aiService.askFoodQuestion(trimmed)
 
-            val updated = _messages.value ?: mutableListOf()
-
-            when (result) {
+            val replyMsg = when (result) {
                 is Resource.Success -> {
-                    updated.add(ChatMessage(
-                        text       = result.data,
-                        isFromUser = false,
-                        hasActions = result.data.contains("recipe", ignoreCase = true)
-                    ))
+                    val data = result.data?.trim()
+                    if (!data.isNullOrEmpty()) {
+                        ChatMessage(
+                            text       = data,
+                            isFromUser = false,
+                            hasActions = data.contains("recipe", ignoreCase = true)
+                        )
+                    } else {
+                        ChatMessage.error("I didn't get a response. Please try again! 🤔")
+                    }
                 }
                 is Resource.Error -> {
-                    // Show as styled amber bubble — not raw error text
-                    updated.add(ChatMessage.error(
+                    ChatMessage.error(
                         "Hmm… something went wrong. Try again! 🤔\n\n" +
                                 "(If this keeps happening, check your internet connection.)"
-                    ))
+                    )
                 }
-                else -> Unit
+                else -> ChatMessage.error("Unexpected error. Please try again.")
             }
 
-            _messages.postValue(updated)
+            // ✅ Messages trước → typing sau: UI hiển thị tin nhắn xong mới ẩn indicator
+            _messages.postValue(snapshot + replyMsg)
+            _isTyping.postValue(false)
         }
+    }
+
+    fun clearMessages() {
+        _messages.value = emptyList()
+        _isTyping.value = false
     }
 }

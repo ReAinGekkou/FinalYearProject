@@ -1,13 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    fragment_ai_chat.xml
-    Full-height ChatGPT-style layout:
-      • Empty state (shown when no messages)
-      • RecyclerView (messages, stackFromEnd = true)
-      • Suggestion chips row
-      • Pill-shaped input + send button
-    windowSoftInputMode="adjustResize" in Manifest handles keyboard push-up.
--->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -54,6 +45,7 @@
                     android:fontFamily="sans-serif-bold"
                     android:textColor="@color/text_primary" />
 
+                <!-- tv_status → binding: tvStatus -->
                 <TextView
                     android:id="@+id/tv_status"
                     android:layout_width="wrap_content"
@@ -63,12 +55,11 @@
                     android:textColor="#4CAF50" />
 
             </LinearLayout>
-
         </LinearLayout>
-
     </androidx.appcompat.widget.Toolbar>
 
     <!-- ── Empty state ────────────────────────────────────────────────────── -->
+    <!-- layout_empty → binding: layoutEmpty -->
     <LinearLayout
         android:id="@+id/layout_empty"
         android:layout_width="0dp"
@@ -83,7 +74,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:visibility="visible">
 
-        <!-- Animated plate icon -->
         <ImageView
             android:id="@+id/iv_empty_icon"
             android:layout_width="80dp"
@@ -115,6 +105,7 @@
     </LinearLayout>
 
     <!-- ── Messages RecyclerView ──────────────────────────────────────────── -->
+    <!-- rv_chat → binding: rvChat -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_chat"
         android:layout_width="0dp"
@@ -128,14 +119,58 @@
         app:stackFromEnd="true"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:layout_constraintBottom_toTopOf="@id/layout_suggestions"
+        app:layout_constraintBottom_toTopOf="@id/card_typing"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         tools:listitem="@layout/item_chat_ai"
         tools:itemCount="4"
         tools:visibility="visible" />
 
+    <!-- ✅ FIX: card_typing THÊM MỚI → binding: cardTyping              -->
+    <!-- Đây là lý do lỗi "Unresolved reference 'cardTyping'"             -->
+    <!-- Hiển thị "AI đang gõ…" animation khi chờ phản hồi              -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_typing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginBottom="6dp"
+        android:visibility="gone"
+        app:cardCornerRadius="16dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardElevation="2dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/layout_suggestions"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp">
+
+            <!-- 3 chấm nhảy — dùng ProgressBar tạm hoặc thay bằng Lottie -->
+            <ProgressBar
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:indeterminate="true"
+                android:indeterminateTint="@color/brand_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="AI is thinking…"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
     <!-- ── Suggestion chips ───────────────────────────────────────────────── -->
+    <!-- layout_suggestions → binding: layoutSuggestions                     -->
     <HorizontalScrollView
         android:id="@+id/layout_suggestions"
         android:layout_width="0dp"
@@ -156,6 +191,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
+            <!-- chip_suggest → binding: chipSuggest -->
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_suggest"
                 style="@style/Widget.MaterialComponents.Chip.Action"
@@ -171,6 +207,7 @@
                 app:chipMinHeight="34dp"
                 android:layout_marginEnd="8dp" />
 
+            <!-- chip_calories → binding: chipCalories -->
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_calories"
                 style="@style/Widget.MaterialComponents.Chip.Action"
@@ -186,6 +223,7 @@
                 app:chipMinHeight="34dp"
                 android:layout_marginEnd="8dp" />
 
+            <!-- chip_quick → binding: chipQuick -->
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_quick"
                 style="@style/Widget.MaterialComponents.Chip.Action"
@@ -201,6 +239,7 @@
                 app:chipMinHeight="34dp"
                 android:layout_marginEnd="8dp" />
 
+            <!-- chip_nutrition → binding: chipNutrition -->
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_nutrition"
                 style="@style/Widget.MaterialComponents.Chip.Action"
@@ -216,10 +255,9 @@
                 app:chipMinHeight="34dp" />
 
         </LinearLayout>
-
     </HorizontalScrollView>
 
-    <!-- ── Top border of input bar ────────────────────────────────────────── -->
+    <!-- ── Divider ─────────────────────────────────────────────────────────── -->
     <View
         android:id="@+id/divider_input"
         android:layout_width="0dp"
@@ -230,6 +268,7 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- ── Input area ─────────────────────────────────────────────────────── -->
+    <!-- layout_input → binding: layoutInput                                  -->
     <LinearLayout
         android:id="@+id/layout_input"
         android:layout_width="0dp"
@@ -244,7 +283,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Pill input field -->
+        <!-- til_message → binding: tilMessage -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_message"
             android:layout_width="0dp"
@@ -262,6 +301,7 @@
             app:hintTextColor="@color/text_hint"
             app:boxBackgroundColor="@color/white">
 
+            <!-- et_message → binding: etMessage -->
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_message"
                 android:layout_width="match_parent"
@@ -281,7 +321,7 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Send button — circular green -->
+        <!-- btn_send → binding: btnSend -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_send"
             android:layout_width="46dp"
