@@ -23,9 +23,6 @@ import com.google.firebase.firestore.Query
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ChatFragment
-// ─────────────────────────────────────────────────────────────────────────────
 
 class ChatFragment : Fragment() {
 
@@ -41,15 +38,9 @@ class ChatFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // vp_chat → b.vpChat
         b.vpChat.adapter = ChatPagerAdapter(this)
-
-        // Giữ cả 2 fragment sống → AI conversation không mất khi switch tab
         b.vpChat.offscreenPageLimit = 1
         b.vpChat.isUserInputEnabled = false
-
-        // tab_chat → b.tabChat
         TabLayoutMediator(b.tabChat, b.vpChat) { tab, pos ->
             tab.text = if (pos == 0) "🤖 AI Assistant" else "💬 Community"
         }.attach()
@@ -67,15 +58,8 @@ class ChatFragment : Fragment() {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CommunityChatFragment
-// ✅ Dùng FragmentCommunityChatBinding riêng
-//    → Không còn reference đến cardTyping / layoutSuggestions / chipXxx
-// ─────────────────────────────────────────────────────────────────────────────
-
 class CommunityChatFragment : Fragment() {
 
-    // ✅ Binding riêng — đây là fix gốc rễ lỗi unresolved reference
     private var _b: FragmentCommunityChatBinding? = null
     private val b get() = _b!!
 
@@ -99,12 +83,12 @@ class CommunityChatFragment : Fragment() {
 
         adapter = CommunityMessageAdapter(uid)
 
-        // rvCommunity — ID trong fragment_community_chat.xml
         b.rvCommunity.apply {
             this.adapter  = adapter
             layoutManager = LinearLayoutManager(requireContext()).apply {
                 stackFromEnd = true
             }
+            itemAnimator = null
         }
 
         b.etMessage.hint = "Say something to the community…"
@@ -123,27 +107,37 @@ class CommunityChatFragment : Fragment() {
     }
 
     private fun listenToMessages() {
-        // ✅ Collection "communityMessages" riêng — không đụng AI
         listener = db.collection("communityMessages")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(50)
+            // ✅ FIX BUG 1: ASCENDING + limitToLast thay vì DESCENDING + limit + reversed()
+            // Lý do: DESCENDING + reversed() bị sai thứ tự khi tin nhắn mới có
+            // server timestamp = null tạm thời (chưa confirmed) → DiffUtil
+            // nghĩ list không đổi → RecyclerView không update
+            .orderBy("timestamp", Query.Direction.ASCENDING)
+            .limitToLast(50)
             .addSnapshotListener { snap, err ->
                 if (err != null || snap == null) return@addSnapshotListener
-                val msgs = snap.documents
-                    .mapNotNull { doc ->
-                        val d = doc.data ?: return@mapNotNull null
-                        CommunityMessage(
-                            id        = doc.id,
-                            userId    = d["userId"]    as? String    ?: "",
-                            userName  = d["userName"]  as? String    ?: "User",
-                            message   = d["message"]   as? String    ?: "",
-                            timestamp = d["timestamp"] as? Timestamp
-                        )
-                    }
-                    .reversed()
 
-                adapter.submitList(msgs) {
-                    if (msgs.isNotEmpty()) b.rvCommunity.smoothScrollToPosition(msgs.size - 1)
+                val msgs = snap.documents.mapNotNull { doc ->
+                    val d = doc.data ?: return@mapNotNull null
+                    CommunityMessage(
+                        id        = doc.id,
+                        userId    = d["userId"]    as? String    ?: "",
+                        userName  = d["userName"]  as? String    ?: "User",
+                        message   = d["message"]   as? String    ?: "",
+                        timestamp = d["timestamp"] as? Timestamp
+                    )
+                }
+
+                // ✅ FIX BUG 2: ArrayList(msgs) tạo object reference MỚI mỗi lần
+                // Lý do: ListAdapter so sánh reference trước khi chạy DiffUtil
+                // Nếu cùng object reference → bỏ qua hoàn toàn → UI không update
+                adapter.submitList(ArrayList(msgs)) {
+                    // post() đảm bảo scroll sau khi RecyclerView đã layout xong
+                    if (msgs.isNotEmpty()) {
+                        b.rvCommunity.post {
+                            b.rvCommunity.smoothScrollToPosition(msgs.size - 1)
+                        }
+                    }
                 }
             }
     }
@@ -153,7 +147,6 @@ class CommunityChatFragment : Fragment() {
         if (text.isBlank()) return
         b.etMessage.setText("")
 
-        // ✅ Chỉ nơi DUY NHẤT ghi Firestore trong toàn bộ Chat feature
         db.collection("communityMessages").add(hashMapOf(
             "userId"    to uid,
             "userName"  to name,
@@ -162,10 +155,6 @@ class CommunityChatFragment : Fragment() {
         ))
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Data + Adapter cho Community
-// ─────────────────────────────────────────────────────────────────────────────
 
 data class CommunityMessage(
     val id        : String     = "",
@@ -199,7 +188,7 @@ class CommunityMessageAdapter(private val myUid: String) :
         private val tvTime = v.findViewById<android.widget.TextView>(R.id.tv_timestamp)
 
         fun bind(msg: CommunityMessage) {
-            val isMine  = msg.userId == myUid
+            val isMine   = msg.userId == myUid
             tvMsg?.text  = if (isMine) msg.message else "${msg.userName}: ${msg.message}"
             tvTime?.text = msg.timestamp?.toDate()?.let {
                 SimpleDateFormat("h:mm a", Locale.getDefault()).format(it)
