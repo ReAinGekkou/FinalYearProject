@@ -1,6 +1,7 @@
 package com.example.finalyearproject.data.remote.ai
 
 import android.util.Log
+import com.example.finalyearproject.BuildConfig
 import com.example.finalyearproject.utils.Resource
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -13,20 +14,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
 
-/**
- * AIService — guaranteed-response version
- *
- * Every public function returns Resource.Success.
- * On API failure, a rich context-aware fallback is returned
- * so the UI always shows something helpful — never a blank error.
- *
- * The root cause of "Sorry, I couldn't process that" was:
- *   1. GEMINI_API_KEY was empty/unset → silent exception →
- *      Resource.Error returned → ViewModel never showed fallback
- *
- * Fix: this class always returns Resource.Success (even on failure).
- * The ViewModel shows the message regardless of success/error path.
- */
 class AIService private constructor() {
 
     private val client = OkHttpClient.Builder()
@@ -38,94 +25,83 @@ class AIService private constructor() {
         })
         .build()
 
-    private val gson     = Gson()
+    private val gson = Gson()
     private val jsonType = "application/json; charset=utf-8".toMediaType()
 
-    // ── Public API ────────────────────────────────────────────────────────────
-
-    suspend fun askFoodQuestion(question: String): Resource<String> =
-        withContext(Dispatchers.IO) {
-            if (question.isBlank()) return@withContext Resource.Success(
-                getFallback("general")
-            )
-            callGemini(
-                system = BASE_SYSTEM,
-                user   = question
-            )
-        }
+    suspend fun askFoodQuestion(question: String): Resource<String> {
+        if (question.isBlank()) return Resource.Success(getFallback("general"))
+        return callGemini(system = BASE_SYSTEM, user = question)
+    }
 
     suspend fun suggestMeal(prompt: String): Resource<String> =
-        withContext(Dispatchers.IO) {
-            callGemini(
-                system = "$BASE_SYSTEM Suggest ONE specific meal. Include name, brief description, key ingredients, and cook time.",
-                user   = prompt
-            )
-        }
+        callGemini(
+            system = "$BASE_SYSTEM Suggest ONE specific meal. Include name, brief description, key ingredients, and cook time.",
+            user = prompt
+        )
 
     suspend fun generateRecipe(ingredients: String): Resource<String> =
-        withContext(Dispatchers.IO) {
-            callGemini(
-                system = "$BASE_SYSTEM $RECIPE_FORMAT",
-                user   = "Generate a recipe using: $ingredients"
-            )
-        }
+        callGemini(
+            system = "$BASE_SYSTEM $RECIPE_FORMAT",
+            user = "Generate a recipe using: $ingredients"
+        )
 
     suspend fun analyzeNutrition(food: String): Resource<String> =
-        withContext(Dispatchers.IO) {
-            callGemini(
-                system = "$BASE_SYSTEM $NUTRITION_FORMAT",
-                user   = "Analyze nutrition for: $food"
-            )
-        }
+        callGemini(
+            system = "$BASE_SYSTEM $NUTRITION_FORMAT",
+            user = "Analyze nutrition for: $food"
+        )
 
     suspend fun suggestMealByPreference(
-        userPreference    : String,
+        userPreference: String,
         favoriteCategories: List<String> = emptyList()
-    ): Resource<String> = withContext(Dispatchers.IO) {
+    ): Resource<String> {
         val ctx = if (favoriteCategories.isNotEmpty())
             "User enjoys: ${favoriteCategories.joinToString(", ")}. " else ""
-        callGemini(
+        return callGemini(
             system = "$BASE_SYSTEM Personalise your suggestion based on the user's tastes.",
-            user   = "${ctx}Request: $userPreference"
+            user = "${ctx}Request: $userPreference"
         )
     }
 
-    // ── Core HTTP call ────────────────────────────────────────────────────────
-
-    private fun callGemini(
-        system     : String,
-        user       : String,
-        maxTokens  : Int    = 1024,
+    private suspend fun callGemini(
+        system: String,
+        user: String,
+        maxTokens: Int = 1024,
         temperature: Double = 0.7
-    ): Resource<String> {
+    ): Resource<String> = withContext(Dispatchers.IO) {
 
-        // Safely read the API key
         val apiKey: String = try {
-            com.example.finalyearproject.BuildConfig.GEMINI_API_KEY
-        } catch (e: Exception) { "" }
-
-        if (apiKey.isBlank() || apiKey.contains("YOUR_") || apiKey.length < 10) {
-            Log.w(TAG, "GEMINI_API_KEY not configured — serving fallback")
-            return Resource.Success(getFallback(user))
+            BuildConfig.GEMINI_API_KEY
+        } catch (e: Exception) {
+            Log.e(TAG, "BuildConfig.GEMINI_API_KEY missing – check build.gradle", e)
+            ""
         }
 
-        val body = gson.toJson(mapOf(
-            "system_instruction" to mapOf(
-                "parts" to listOf(mapOf("text" to system))
-            ),
-            "contents" to listOf(
-                mapOf("parts" to listOf(mapOf("text" to user)))
-            ),
-            "generationConfig" to mapOf(
-                "maxOutputTokens" to maxTokens,
-                "temperature"     to temperature
+        Log.d(TAG, "API key length: ${apiKey.length} (0 = missing)")
+
+        if (apiKey.isBlank() || apiKey.contains("YOUR_") || apiKey.length < 20) {
+            Log.w(TAG, "GEMINI_API_KEY not properly configured – using fallback")
+            return@withContext Resource.Success(getFallback(user))
+        }
+
+        val body = gson.toJson(
+            mapOf(
+                "system_instruction" to mapOf(
+                    "parts" to listOf(mapOf("text" to system))
+                ),
+                "contents" to listOf(
+                    mapOf("parts" to listOf(mapOf("text" to user)))
+                ),
+                "generationConfig" to mapOf(
+                    "maxOutputTokens" to maxTokens,
+                    "temperature" to temperature
+                )
             )
-        ))
+        )
 
-        val url = "https://generativelanguage.googleapis.com/v1beta/" +
-                "models/gemini-2.0-flash:generateContent?key=$apiKey"
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
 
-        return try {
+        return@withContext try {
             val request = Request.Builder()
                 .url(url)
                 .post(body.toRequestBody(jsonType))
@@ -133,29 +109,30 @@ class AIService private constructor() {
                 .build()
 
             val response = client.newCall(request).execute()
-            val rawJson  = response.body?.string() ?: ""
+            val rawJson = response.body?.string() ?: ""
 
-            Log.d(TAG, "Gemini HTTP ${response.code} — preview: ${rawJson.take(200)}")
+            Log.d(TAG, "Gemini HTTP ${response.code} – preview: ${rawJson.take(200)}")
 
             if (!response.isSuccessful) {
                 Log.w(TAG, "API error ${response.code}: ${rawJson.take(300)}")
-                return Resource.Success(getFallback(user))
+                return@withContext Resource.Success(getFallback(user))
             }
 
             val text = parseResponse(rawJson)
-            if (text.isBlank()) Resource.Success(getFallback(user))
-            else Resource.Success(text)
-
+            if (text.isBlank()) {
+                Log.w(TAG, "Empty response from Gemini – using fallback")
+                Resource.Success(getFallback(user))
+            } else {
+                Resource.Success(text)
+            }
         } catch (e: java.io.IOException) {
             Log.e(TAG, "Network error: ${e.message}")
             Resource.Success(getFallback(user))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected: ${e.message}", e)
+            Log.e(TAG, "Unexpected error: ${e.message}", e)
             Resource.Success(getFallback(user))
         }
     }
-
-    // ── JSON parsing ──────────────────────────────────────────────────────────
 
     private fun parseResponse(json: String): String = try {
         gson.fromJson(json, JsonObject::class.java)
@@ -171,13 +148,6 @@ class AIService private constructor() {
         ""
     }
 
-    // ── Context-aware fallbacks ───────────────────────────────────────────────
-
-    /**
-     * Returns a rich, helpful fallback keyed to what the user asked about.
-     * This is what the user sees when the API is unavailable.
-     * Never returns an error string.
-     */
     private fun getFallback(question: String): String {
         val q = question.lowercase()
         return when {
@@ -203,7 +173,6 @@ class AIService private constructor() {
 
     companion object {
         private const val TAG = "AIService"
-
         private const val BASE_SYSTEM =
             "You are a professional Vietnamese chef and certified nutritionist. " +
                     "Give practical, accurate, and engaging food advice. Be concise — " +
@@ -218,7 +187,9 @@ class AIService private constructor() {
             "Format: 🔥 Calories | 💪 Protein | 🌾 Carbs | 🥑 Fat | ✅ Health note. " +
                     "Keep it brief and practical."
 
-        @Volatile private var instance: AIService? = null
+        @Volatile
+        private var instance: AIService? = null
+
         fun getInstance(): AIService = instance ?: synchronized(this) {
             instance ?: AIService().also { instance = it }
         }

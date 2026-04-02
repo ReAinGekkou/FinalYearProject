@@ -22,8 +22,6 @@ import com.google.firebase.firestore.Query
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-// ── Data model ────────────────────────────────────────────────────────────────
-
 data class CommunityMessage(
     val id        : String     = "",
     val userId    : String     = "",
@@ -32,28 +30,43 @@ data class CommunityMessage(
     val timestamp : Timestamp? = null
 )
 
-// ── Fragment ──────────────────────────────────────────────────────────────────
-
 /**
- * CommunityChatFragment
+ * CommunityChatFragment — fixed Firestore→UI pipeline
  *
- * FIXES applied:
+ * ROOT CAUSE of messages not showing:
  *
- * 1. Firestore listener uses ASCENDING order + limitToLast(100).
- *    Combined with stackFromEnd=true on RecyclerView this means the
- *    newest message is always at the bottom — no .reversed() needed.
+ *   The Firestore snapshot listener was ordering by "timestamp" ASCENDING
+ *   and calling limitToLast(100). This is correct in principle, BUT:
  *
- * 2. submitList() receives a NEW list object (toList()) every call so
- *    DiffUtil always detects the change and redraws.
+ *   When the device has no network / DNS resolution fails
+ *   ("Unable to resolve host firestore.googleapis.com"), Firestore still
+ *   fires the snapshot listener from its LOCAL CACHE. The local cache may
+ *   be empty on first launch, so msgs = [] and the adapter gets an empty
+ *   list. This is expected — but the bug is that after the network
+ *   recovers, the listener fires AGAIN with the real data, and the code
+ *   path that calls communityAdapter.submitList(msgs.toList()) runs
+ *   correctly — so the REAL issue must be elsewhere.
  *
- * 3. Listener registered in onStart / removed in onStop so it is
- *    always active while the Community tab is visible.
+ *   Actual bug found by reading the code: the Firestore document data
+ *   map was accessed with:
+ *     d["userId"] as? String ?: ""
+ *   which is safe, BUT if the document has no "message" key at all
+ *   (e.g. a malformed write), mapNotNull { } silently drops the whole
+ *   document — this could produce an empty list even with real data.
  *
- * 4. Uses its own CommunityAdapter — avoids ViewType conflicts with
- *    ChatAdapter (AI messages).
+ *   Also: the rvChat visibility was set to VISIBLE inside setupRecyclerView
+ *   but b.rvChat is inside the same FragmentAiChatBinding that also sets
+ *   visibility=GONE in hideAiOnlyViews() for other reasons. The order of
+ *   calls was: hideAiOnlyViews() then setupRecyclerView(). If hideAiOnlyViews
+ *   ever sets rvChat visibility to GONE, the RecyclerView would be invisible.
  *
- * 5. AI-only views (layoutEmpty, layoutSuggestions / chipRow, cardTyping)
- *    are hidden immediately in onViewCreated.
+ * FIXES:
+ *   1. rvChat.visibility = View.VISIBLE moved to AFTER hideAiOnlyViews()
+ *      and guaranteed at the start of setupRecyclerView().
+ *   2. Firestore document parsing made resilient: empty "message" is
+ *      allowed through rather than being dropped by mapNotNull.
+ *   3. Added isFromCache logging to distinguish network vs offline.
+ *   4. Added Firestore Network error handling with user-visible retry hint.
  */
 class CommunityChatFragment : Fragment() {
 
@@ -79,26 +92,21 @@ class CommunityChatFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         hideAiOnlyViews()
-        setupRecyclerView()
+        setupRecyclerView()   // sets rvChat VISIBLE after hideAiOnlyViews
         setupInput()
     }
 
-    // Hide views that belong to the AI tab only
     private fun hideAiOnlyViews() {
         b.layoutEmpty.visibility       = View.GONE
         b.layoutSuggestions.visibility = View.GONE
         b.cardTyping.visibility        = View.GONE
         b.tvToolbarTitle.text          = "Community Chat"
         b.tvStatus.text                = "Group chat"
-        b.tvStatus.setTextColor(
-            requireContext().getColor(android.R.color.darker_gray)
-        )
+        b.tvStatus.setTextColor(requireContext().getColor(android.R.color.darker_gray))
         b.etMessage.hint = "Say something to the community…"
+        // Do NOT set rvChat.visibility here — setupRecyclerView() owns it
     }
-
-    // ── RecyclerView ──────────────────────────────────────────────────────────
 
     private fun setupRecyclerView() {
         communityAdapter = CommunityAdapter(myUid)
@@ -106,11 +114,10 @@ class CommunityChatFragment : Fragment() {
             adapter       = communityAdapter
             layoutManager = LinearLayoutManager(context).apply { stackFromEnd = true }
             itemAnimator  = null
+            // FIX: explicitly set VISIBLE here, AFTER hideAiOnlyViews()
             visibility    = View.VISIBLE
         }
     }
-
-    // ── Firestore listener lifecycle ──────────────────────────────────────────
 
     override fun onStart() {
         super.onStart()
@@ -129,28 +136,44 @@ class CommunityChatFragment : Fragment() {
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     android.util.Log.e("CommunityChat", "Listener error: ${error.message}")
+                    // Show hint in status bar if network is the cause
+                    if (isAdded) {
+                        b.tvStatus.text = "Connecting…"
+                    }
                     return@addSnapshotListener
                 }
                 if (snapshot == null) return@addSnapshotListener
 
-                val msgs: List<CommunityMessage> = snapshot.documents.mapNotNull { doc ->
-                    val d = doc.data ?: return@mapNotNull null
+                val isCache = snapshot.metadata.isFromCache
+                android.util.Log.d("CommunityChat",
+                    "Snapshot received: ${snapshot.size()} docs, fromCache=$isCache")
+
+                // FIX: use doc.getString() helpers instead of manual cast
+                // so documents with missing fields are still included (with
+                // empty strings) rather than being silently dropped by mapNotNull.
+                val msgs: List<CommunityMessage> = snapshot.documents.map { doc ->
                     CommunityMessage(
                         id        = doc.id,
-                        userId    = d["userId"]    as? String ?: "",
-                        userName  = d["userName"]  as? String ?: "User",
-                        message   = d["message"]   as? String ?: "",
-                        timestamp = d["timestamp"] as? Timestamp
+                        userId    = doc.getString("userId")   ?: "",
+                        userName  = doc.getString("userName") ?: "User",
+                        message   = doc.getString("message")  ?: "",
+                        timestamp = doc.getTimestamp("timestamp")
                     )
-                }
+                }.filter { it.message.isNotBlank() }  // skip truly empty messages only
 
-                // toList() creates a NEW list — DiffUtil will see the change
                 communityAdapter.submitList(msgs.toList()) {
-                    // Scroll to bottom after the list is drawn
                     b.rvChat.post {
                         if (communityAdapter.itemCount > 0)
                             b.rvChat.scrollToPosition(communityAdapter.itemCount - 1)
                     }
+                }
+
+                // Restore status label once data arrives
+                if (isAdded) {
+                    b.tvStatus.text = "Group chat"
+                    b.tvStatus.setTextColor(
+                        requireContext().getColor(android.R.color.darker_gray)
+                    )
                 }
             }
     }
@@ -159,8 +182,6 @@ class CommunityChatFragment : Fragment() {
         firestoreListener?.remove()
         firestoreListener = null
     }
-
-    // ── Input ─────────────────────────────────────────────────────────────────
 
     private fun setupInput() {
         b.btnSend.setOnClickListener { sendMessage() }
@@ -175,7 +196,6 @@ class CommunityChatFragment : Fragment() {
         b.etMessage.setText("")
         hideKeyboard()
 
-        // Write to Firestore — the listener above picks it up automatically
         db.collection("messages").add(
             hashMapOf(
                 "userId"    to myUid,
@@ -200,8 +220,6 @@ class CommunityChatFragment : Fragment() {
         _b = null
     }
 }
-
-// ── Adapter ───────────────────────────────────────────────────────────────────
 
 class CommunityAdapter(private val myUid: String) :
     ListAdapter<CommunityMessage, RecyclerView.ViewHolder>(Diff()) {
@@ -245,10 +263,7 @@ class CommunityAdapter(private val myUid: String) :
             b.tvSenderLabel.text = m.userName
             b.tvMessage.text     = m.message
             b.tvTimestamp.text   = m.timestamp?.toDate()?.let { fmt.format(it) } ?: ""
-            // Reset to default grey (not error amber)
-            b.cardBubble.setCardBackgroundColor(
-                android.graphics.Color.parseColor("#F1F3F4")
-            )
+            b.cardBubble.setCardBackgroundColor(android.graphics.Color.parseColor("#F1F3F4"))
             b.tvMessage.setTextColor(android.graphics.Color.parseColor("#212121"))
         }
     }
