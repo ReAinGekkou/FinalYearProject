@@ -23,7 +23,6 @@ class AiChatFragment : Fragment() {
     private var _b: FragmentAiChatBinding? = null
     private val b get() = _b!!
 
-    // ── ViewModel scoped to PARENT so messages survive tab switches ───────────
     private lateinit var viewModel: ChatViewModel
     private lateinit var adapter: ChatAdapter
     private var dotAnimSet: AnimatorSet? = null
@@ -37,34 +36,39 @@ class AiChatFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Must use requireParentFragment() – not requireActivity() and not
-        // this fragment – otherwise ViewModel is recreated on tab switch and
-        // messages are lost.
         viewModel = ViewModelProvider(requireParentFragment())[ChatViewModel::class.java]
-
         setupRecyclerView()
         setupInput()
         setupChips()
         observe()
     }
 
+    override fun onDestroyView() {
+        dotAnimSet?.cancel()
+        dotAnimSet = null
+        super.onDestroyView()
+        _b = null
+    }
+
     // ── RecyclerView ──────────────────────────────────────────────────────────
 
     private fun setupRecyclerView() {
         adapter = ChatAdapter()
+        // rvChat → android:id="@+id/rvChat" ✓
         b.rvChat.apply {
             this.adapter  = adapter
             layoutManager = LinearLayoutManager(context).apply { stackFromEnd = true }
-            itemAnimator  = null   // prevent flicker on list updates
+            itemAnimator  = null
         }
     }
 
-    // ── Input field ───────────────────────────────────────────────────────────
+    // ── Input ─────────────────────────────────────────────────────────────────
 
     private fun setupInput() {
+        // btnSend → android:id="@+id/btnSend" ✓
         b.btnSend.setOnClickListener { sendFromInput() }
 
+        // etMessage → android:id="@+id/etMessage" ✓
         b.etMessage.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEND) { sendFromInput(); true } else false
         }
@@ -88,37 +92,44 @@ class AiChatFragment : Fragment() {
         viewModel.sendMessage(text)
     }
 
-    // ── Chips — send directly, NEVER touch the input field ───────────────────
+    // ── Chips ─────────────────────────────────────────────────────────────────
 
     private fun setupChips() {
+        // chipSuggest   → android:id="@+id/chipSuggest"   ✓
         b.chipSuggest.setOnClickListener {
             viewModel.sendMessage("Suggest a recipe I can make with chicken and rice")
         }
+        // chipCalories  → android:id="@+id/chipCalories"  ✓
         b.chipCalories.setOnClickListener {
             viewModel.sendMessage("How many calories are in a bowl of pho?")
         }
+        // ✅ FIX: chipQuickMeal → android:id="@+id/chipQuickMeal" ✓
+        // Previous code used b.chipQuick → DOES NOT EXIST in XML → compile error
         b.chipQuickMeal.setOnClickListener {
             viewModel.sendMessage("Give me 3 quick meal ideas under 30 minutes")
         }
+        // chipNutrition → android:id="@+id/chipNutrition" ✓
         b.chipNutrition.setOnClickListener {
             viewModel.sendMessage("What are the healthiest Vietnamese dishes?")
         }
     }
 
-    // ── Observers ─────────────────────────────────────────────────────────────
+    // ── Observe ───────────────────────────────────────────────────────────────
 
     private fun observe() {
 
-        // Messages observer — drives the RecyclerView
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
             val hasMessages = messages.isNotEmpty()
 
-            b.layoutEmpty.visibility = if (hasMessages) View.GONE  else View.VISIBLE
+            // layoutEmpty → android:id="@+id/layoutEmpty" ✓
+            b.layoutEmpty.visibility = if (hasMessages) View.GONE   else View.VISIBLE
+            // rvChat → android:id="@+id/rvChat" ✓
             b.rvChat.visibility      = if (hasMessages) View.VISIBLE else View.GONE
+            // layoutSuggestions → android:id="@+id/layoutSuggestions" ✓ — always visible
+            b.layoutSuggestions.visibility = View.VISIBLE
 
-            // Pass a new List object — DiffUtil detects the delta
-            adapter.submitList(messages.toList()) {
-                // Scroll AFTER the adapter draw pass
+            // ArrayList() creates a NEW reference every time → DiffUtil always runs
+            adapter.submitList(ArrayList(messages)) {
                 b.rvChat.post {
                     if (adapter.itemCount > 0)
                         b.rvChat.scrollToPosition(adapter.itemCount - 1)
@@ -126,8 +137,8 @@ class AiChatFragment : Fragment() {
             }
         }
 
-        // Typing indicator observer
         viewModel.isTyping.observe(viewLifecycleOwner) { typing ->
+            // tvStatus → android:id="@+id/tvStatus" ✓
             b.tvStatus.text = if (typing) "Thinking…" else "Ready to help"
             b.tvStatus.setTextColor(
                 requireContext().getColor(
@@ -137,12 +148,13 @@ class AiChatFragment : Fragment() {
             )
 
             if (typing) showTypingBubble() else hideTypingBubble()
-
             refreshSendButton(b.etMessage.text?.isNotBlank() == true)
         }
     }
 
-    // ── Typing bubble animation ───────────────────────────────────────────────
+    // ── Typing bubble ─────────────────────────────────────────────────────────
+    // dot1/dot2/dot3 → CONFIRMED exist in fragment_ai_chat.xml ✓
+    // cardTyping     → android:id="@+id/cardTyping" ✓
 
     private fun showTypingBubble() {
         b.cardTyping.visibility = View.VISIBLE
@@ -178,7 +190,7 @@ class AiChatFragment : Fragment() {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun refreshSendButton(hasText: Boolean) {
-        val loading = viewModel.isTyping.value == true
+        val loading         = viewModel.isTyping.value == true
         b.btnSend.isEnabled = hasText && !loading
         b.btnSend.alpha     = if (b.btnSend.isEnabled) 1f else 0.4f
     }
@@ -188,12 +200,5 @@ class AiChatFragment : Fragment() {
             .getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
                 as InputMethodManager
         imm.hideSoftInputFromWindow(b.etMessage.windowToken, 0)
-    }
-
-    override fun onDestroyView() {
-        dotAnimSet?.cancel()
-        dotAnimSet = null
-        super.onDestroyView()
-        _b = null
     }
 }

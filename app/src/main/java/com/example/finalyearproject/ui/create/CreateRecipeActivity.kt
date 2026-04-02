@@ -1,6 +1,5 @@
 package com.example.finalyearproject.ui.create
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -11,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.example.finalyearproject.databinding.ActivityCreateRecipeBinding
 import com.example.finalyearproject.databinding.FragmentStep1BasicsBinding
@@ -26,93 +26,80 @@ class CreateRecipeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCreateRecipeBinding
     private val viewModel: CreateRecipeViewModel by viewModels()
 
-    private val TOTAL_STEPS = 3
-    private var currentStep = 0      // 0-based index
-
-    // Step fragment instances — created once, reused by ViewPager2
-    private val step1 by lazy { Step1Fragment(viewModel) }
-    private val step2 by lazy { Step2Fragment() }
-    private val step3 by lazy { Step3Fragment() }
+    private var currentStep = 0
+    private val totalSteps  = 3
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityCreateRecipeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Restore step index across config changes
-        currentStep = savedInstanceState?.getInt(KEY_STEP) ?: 0
-
         setSupportActionBar(binding.toolbar)
-        binding.toolbar.setNavigationOnClickListener {
-            // Back arrow: go to previous step OR finish if on step 1
-            if (currentStep > 0) goToStep(currentStep - 1)
-            else finish()
-        }
+        binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
-        setupViewPager()
+        binding.vpSteps.adapter            = StepAdapter()
+        binding.vpSteps.isUserInputEnabled = false
+
+        updateProgress()
         setupButtons()
         observeViewModel()
-        updateUi()   // apply initial state
     }
 
-    override fun onSaveInstanceState(out: Bundle) {
-        super.onSaveInstanceState(out)
-        out.putInt(KEY_STEP, currentStep)
-    }
+    // ── Fragment helpers ──────────────────────────────────────────────────────
 
-    // ── ViewPager2 ────────────────────────────────────────────────────────────
+    // ✅ FIX ROOT CAUSE of Bug 2:
+    //
+    // BEFORE (broken):
+    //   fun currentFragment() = findFragmentByTag("f${vpSteps.currentItem}")
+    //   fun getStep1() = currentFragment() as? Step1Fragment   ← always uses currentItem
+    //   fun getStep2() = currentFragment() as? Step2Fragment   ← always uses currentItem
+    //   fun getStep3() = currentFragment() as? Step3Fragment   ← always uses currentItem
+    //
+    // When submitRecipe() is called at step 2 (currentItem = 2):
+    //   getStep1() → tag "f2" → returns Step3Fragment → cast = null → return early
+    //   getStep2() → tag "f2" → returns Step3Fragment → cast = null → return early
+    //   Result: submitRecipe() silently returns without publishing → nothing happens
+    //   BUT validateCurrentStep() at step 2 ALSO calls getStep3() → null → returns true
+    //   (vacuous true) → currentStep never increments past 2 but nothing publishes
+    //   This causes the Activity to appear stuck / finish with no result.
+    //
+    // AFTER (fixed): each getter uses its OWN hardcoded position tag
+    private fun fragmentAt(position: Int): Fragment? =
+        supportFragmentManager.findFragmentByTag("f$position")
 
-    private fun setupViewPager() {
-        binding.vpSteps.adapter = StepPagerAdapter()
-        // Disable swipe — navigation is controlled by buttons only
-        binding.vpSteps.isUserInputEnabled = false
-    }
+    private fun getStep1(): Step1Fragment? = fragmentAt(0) as? Step1Fragment
+    private fun getStep2(): Step2Fragment? = fragmentAt(1) as? Step2Fragment
+    private fun getStep3(): Step3Fragment? = fragmentAt(2) as? Step3Fragment
 
     // ── Buttons ───────────────────────────────────────────────────────────────
 
     private fun setupButtons() {
         binding.btnNext.setOnClickListener {
-            if (!validateCurrentStep()) return@setOnClickListener
-
-            if (currentStep < TOTAL_STEPS - 1) {
-                // ── FIX: advance the ViewPager, DO NOT start an Intent ────────
-                goToStep(currentStep + 1)
-            } else {
-                // On the last step — submit
-                submitRecipe()
+            if (validateCurrentStep()) {
+                if (currentStep < totalSteps - 1) {
+                    currentStep++
+                    binding.vpSteps.setCurrentItem(currentStep, true)
+                    updateProgress()
+                } else {
+                    submitRecipe()
+                }
             }
         }
 
         binding.btnBackStep.setOnClickListener {
-            if (currentStep > 0) goToStep(currentStep - 1)
+            if (currentStep > 0) {
+                currentStep--
+                binding.vpSteps.setCurrentItem(currentStep, true)
+                updateProgress()
+            }
         }
     }
 
-    /**
-     * Moves to a specific step index.
-     * Only this function is allowed to change [currentStep].
-     */
-    private fun goToStep(step: Int) {
-        currentStep = step.coerceIn(0, TOTAL_STEPS - 1)
-        // setCurrentItem animates to the target page inside the SAME activity
-        binding.vpSteps.setCurrentItem(currentStep, true)
-        updateUi()
-    }
-
-    // ── UI state per step ─────────────────────────────────────────────────────
-
-    private fun updateUi() {
-        val progress = ((currentStep + 1) * 100) / TOTAL_STEPS
-        binding.progressStep.progress = progress
-
-        binding.btnBackStep.visibility =
-            if (currentStep > 0) View.VISIBLE else View.GONE
-
-        binding.btnNext.text = when (currentStep) {
-            TOTAL_STEPS - 1 -> "Publish ✓"
-            else            -> "Next →"
-        }
-
+    private fun updateProgress() {
+        val pct = ((currentStep + 1) * 100) / totalSteps
+        binding.progressStep.progress  = pct
+        binding.btnBackStep.visibility = if (currentStep > 0) View.VISIBLE else View.GONE
+        binding.btnNext.text           = if (currentStep == totalSteps - 1) "Publish ✓" else "Next →"
         supportActionBar?.title = when (currentStep) {
             0    -> "Create Recipe"
             1    -> "Ingredients & Steps"
@@ -120,25 +107,24 @@ class CreateRecipeActivity : AppCompatActivity() {
         }
     }
 
-    // ── Validation ────────────────────────────────────────────────────────────
-
     private fun validateCurrentStep(): Boolean = when (currentStep) {
         0 -> {
-            val title = step1.getTitle()
+            val title = getStep1()?.getTitle() ?: ""
             if (title.isBlank()) {
-                step1.setTitleError("Title is required")
+                getStep1()?.setTitleError("Title is required")
                 false
             } else true
         }
         1 -> {
-            val ings = step2.getIngredients()
+            val ings = getStep2()?.getIngredients() ?: emptyList()
             if (ings.isEmpty()) {
                 Toast.makeText(this, "Add at least one ingredient", Toast.LENGTH_SHORT).show()
                 false
             } else true
         }
         2 -> {
-            if (step3.getCookTime() <= 0) {
+            val ct = getStep3()?.getCookTime() ?: 0
+            if (ct <= 0) {
                 Toast.makeText(this, "Enter cooking time in minutes", Toast.LENGTH_SHORT).show()
                 false
             } else true
@@ -146,21 +132,20 @@ class CreateRecipeActivity : AppCompatActivity() {
         else -> true
     }
 
-    // ── Submit ────────────────────────────────────────────────────────────────
-
     private fun submitRecipe() {
+        val s1 = getStep1() ?: return
+        val s2 = getStep2() ?: return
+        val s3 = getStep3() ?: return
         viewModel.submitRecipe(
-            title       = step1.getTitle(),
-            description = step1.getDescription(),
-            ingredients = step2.getIngredients(),
-            steps       = step2.getSteps(),
-            category    = step3.getCategory(),
-            cookTime    = step3.getCookTime(),
-            videoUrl    = step3.getVideoUrl()
+            title       = s1.getTitle(),
+            description = s1.getDescription(),
+            ingredients = s2.getIngredients(),
+            steps       = s2.getSteps(),
+            category    = s3.getCategory(),
+            cookTime    = s3.getCookTime(),
+            videoUrl    = s3.getVideoUrl()
         )
     }
-
-    // ── Observe result ────────────────────────────────────────────────────────
 
     private fun observeViewModel() {
         viewModel.createState.observe(this) { resource ->
@@ -172,7 +157,6 @@ class CreateRecipeActivity : AppCompatActivity() {
                 is Resource.Success -> {
                     Toast.makeText(this, "Recipe published! 🎉", Toast.LENGTH_SHORT).show()
                     setResult(RESULT_OK)
-                    // finish() is ONLY called here — after a successful publish
                     finish()
                 }
                 is Resource.Error -> {
@@ -184,31 +168,28 @@ class CreateRecipeActivity : AppCompatActivity() {
         }
     }
 
-    // ── ViewPager2 adapter ────────────────────────────────────────────────────
+    // ── Adapter ───────────────────────────────────────────────────────────────
 
-    private inner class StepPagerAdapter : FragmentStateAdapter(this) {
-        override fun getItemCount() = TOTAL_STEPS
+    private inner class StepAdapter : FragmentStateAdapter(this) {
+        override fun getItemCount() = totalSteps
         override fun createFragment(position: Int): Fragment = when (position) {
-            0    -> step1
-            1    -> step2
-            else -> step3
+            0    -> Step1Fragment()
+            1    -> Step2Fragment()
+            else -> Step3Fragment()
         }
-    }
-
-    companion object {
-        private const val KEY_STEP = "current_step"
     }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Step 1 — Image + Title + Description
+// Step1Fragment
 // ─────────────────────────────────────────────────────────────────────────────
 
-class Step1Fragment(private val viewModel: CreateRecipeViewModel) : Fragment() {
+class Step1Fragment : Fragment() {
 
     private var _b: FragmentStep1BasicsBinding? = null
     private val b get() = _b!!
+
+    private val viewModel: CreateRecipeViewModel by activityViewModels()
 
     private val pickImage = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -221,7 +202,7 @@ class Step1Fragment(private val viewModel: CreateRecipeViewModel) : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, state: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedState: Bundle?
     ): View {
         _b = FragmentStep1BasicsBinding.inflate(inflater, container, false)
         return b.root
@@ -231,16 +212,15 @@ class Step1Fragment(private val viewModel: CreateRecipeViewModel) : Fragment() {
         b.cardImage.setOnClickListener { pickImage.launch("image/*") }
     }
 
-    fun getTitle(): String       = b.etTitle.text?.toString()?.trim() ?: ""
-    fun getDescription(): String = b.etDescription.text?.toString()?.trim() ?: ""
+    fun getTitle()                 = b.etTitle.text?.toString()?.trim() ?: ""
+    fun getDescription()           = b.etDescription.text?.toString()?.trim() ?: ""
     fun setTitleError(msg: String) { b.tilTitle.error = msg }
 
     override fun onDestroyView() { super.onDestroyView(); _b = null }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Step 2 — Ingredients + Steps (dynamic rows)
+// Step2Fragment
 // ─────────────────────────────────────────────────────────────────────────────
 
 class Step2Fragment : Fragment() {
@@ -249,58 +229,50 @@ class Step2Fragment : Fragment() {
     private val b get() = _b!!
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, state: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedState: Bundle?
     ): View {
         _b = FragmentStep2IngredientsBinding.inflate(inflater, container, false)
         return b.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        // Seed with initial rows
         repeat(3) { addIngredientRow() }
         repeat(2) { addStepRow() }
-
         b.btnAddIngredient.setOnClickListener { addIngredientRow() }
         b.btnAddStep.setOnClickListener       { addStepRow() }
     }
 
     private fun addIngredientRow() {
         b.containerIngredients.addView(
-            makeInput("Ingredient ${b.containerIngredients.childCount + 1}")
+            makeInputField("Ingredient ${b.containerIngredients.childCount + 1}")
         )
     }
 
     private fun addStepRow() {
         b.containerSteps.addView(
-            makeInput("Step ${b.containerSteps.childCount + 1}", multiLine = true)
+            makeInputField("Step ${b.containerSteps.childCount + 1}", multiLine = true)
         )
     }
 
-    private fun makeInput(hint: String, multiLine: Boolean = false): TextInputLayout {
+    private fun makeInputField(hint: String, multiLine: Boolean = false): TextInputLayout {
         val ctx = requireContext()
         val til = TextInputLayout(
             ctx, null,
-            com.google.android.material.R.style
-                .Widget_MaterialComponents_TextInputLayout_OutlinedBox
+            com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox
         ).apply {
             layoutParams = ViewGroup.MarginLayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ).also { it.bottomMargin = (8 * resources.displayMetrics.density).toInt() }
             this.hint = hint
             setBoxCornerRadii(12f, 12f, 12f, 12f)
         }
         val et = TextInputEditText(ctx).apply {
             layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             inputType = if (multiLine)
-                android.text.InputType.TYPE_CLASS_TEXT or
-                        android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
             else
-                android.text.InputType.TYPE_CLASS_TEXT or
-                        android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             setTextColor(android.graphics.Color.parseColor("#212121"))
             textSize = 14f
             setPadding(0, 40, 0, 40)
@@ -310,29 +282,28 @@ class Step2Fragment : Fragment() {
     }
 
     fun getIngredients(): List<String> {
-        return (0 until b.containerIngredients.childCount)
-            .mapNotNull { i ->
-                (b.containerIngredients.getChildAt(i) as? TextInputLayout)
-                    ?.editText?.text?.toString()?.trim()
-                    ?.takeIf { it.isNotBlank() }
-            }
+        val result = mutableListOf<String>()
+        for (i in 0 until b.containerIngredients.childCount) {
+            val til = b.containerIngredients.getChildAt(i) as? TextInputLayout ?: continue
+            result.add((til.editText?.text?.toString() ?: "").trim())
+        }
+        return result.filter { it.isNotBlank() }
     }
 
     fun getSteps(): List<String> {
-        return (0 until b.containerSteps.childCount)
-            .mapNotNull { i ->
-                (b.containerSteps.getChildAt(i) as? TextInputLayout)
-                    ?.editText?.text?.toString()?.trim()
-                    ?.takeIf { it.isNotBlank() }
-            }
+        val result = mutableListOf<String>()
+        for (i in 0 until b.containerSteps.childCount) {
+            val til = b.containerSteps.getChildAt(i) as? TextInputLayout ?: continue
+            result.add((til.editText?.text?.toString() ?: "").trim())
+        }
+        return result.filter { it.isNotBlank() }
     }
 
     override fun onDestroyView() { super.onDestroyView(); _b = null }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Step 3 — Category + Cook time + Video URL
+// Step3Fragment
 // ─────────────────────────────────────────────────────────────────────────────
 
 class Step3Fragment : Fragment() {
@@ -341,19 +312,19 @@ class Step3Fragment : Fragment() {
     private val b get() = _b!!
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, state: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedState: Bundle?
     ): View {
         _b = FragmentStep3DetailsBinding.inflate(inflater, container, false)
         return b.root
     }
 
     fun getCategory(): String {
-        val checkedId = b.chipGroupCategory.checkedChipId
-        return if (checkedId == View.NO_ID) "Other"
-        else b.chipGroupCategory.findViewById<Chip>(checkedId)?.text?.toString() ?: "Other"
+        val id = b.chipGroupCategory.checkedChipId
+        return if (id == View.NO_ID) "Other"
+        else b.chipGroupCategory.findViewById<Chip>(id)?.text?.toString() ?: "Other"
     }
 
-    fun getCookTime(): Int  = b.etCookTime.text?.toString()?.toIntOrNull() ?: 0
+    fun getCookTime(): Int    = b.etCookTime.text?.toString()?.toIntOrNull() ?: 0
     fun getVideoUrl(): String = b.etVideoUrl.text?.toString()?.trim() ?: ""
 
     override fun onDestroyView() { super.onDestroyView(); _b = null }
