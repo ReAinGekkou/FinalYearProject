@@ -1,12 +1,15 @@
 package com.example.finalyearproject.ui.chat
 
-import android.content.Context
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.fragment.app.Fragment
@@ -20,13 +23,13 @@ class AiChatFragment : Fragment() {
     private var _b: FragmentAiChatBinding? = null
     private val b get() = _b!!
 
+    // ── ViewModel scoped to PARENT so messages survive tab switches ───────────
     private lateinit var viewModel: ChatViewModel
     private lateinit var adapter: ChatAdapter
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    private var dotAnimSet: AnimatorSet? = null
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, state: Bundle?
     ): View {
         _b = FragmentAiChatBinding.inflate(inflater, container, false)
         return b.root
@@ -35,145 +38,162 @@ class AiChatFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Share ViewModel với parent ChatFragment → tin nhắn sống qua tab switch
+        // Must use requireParentFragment() – not requireActivity() and not
+        // this fragment – otherwise ViewModel is recreated on tab switch and
+        // messages are lost.
         viewModel = ViewModelProvider(requireParentFragment())[ChatViewModel::class.java]
 
         setupRecyclerView()
         setupInput()
         setupChips()
-        observeViewModel()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _b = null
+        observe()
     }
 
     // ── RecyclerView ──────────────────────────────────────────────────────────
 
     private fun setupRecyclerView() {
         adapter = ChatAdapter()
-        // rv_chat → b.rvChat
         b.rvChat.apply {
             this.adapter  = adapter
-            layoutManager = LinearLayoutManager(requireContext()).apply {
-                stackFromEnd = true
-            }
-            itemAnimator = null
+            layoutManager = LinearLayoutManager(context).apply { stackFromEnd = true }
+            itemAnimator  = null   // prevent flicker on list updates
         }
     }
 
-    // ── Input ─────────────────────────────────────────────────────────────────
+    // ── Input field ───────────────────────────────────────────────────────────
 
     private fun setupInput() {
-        // btn_send → b.btnSend
-        b.btnSend.setOnClickListener { sendMessage() }
+        b.btnSend.setOnClickListener { sendFromInput() }
 
-        // et_message → b.etMessage
         b.etMessage.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEND) { sendMessage(); true } else false
+            if (actionId == EditorInfo.IME_ACTION_SEND) { sendFromInput(); true } else false
         }
 
         b.etMessage.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
             override fun onTextChanged(s: CharSequence?, st: Int, b2: Int, c: Int) {
-                setSendEnabled(s?.toString()?.isNotBlank() == true)
+                refreshSendButton(s?.isNotBlank() == true)
             }
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        setSendEnabled(false)
+        refreshSendButton(false)
     }
 
-    private fun setSendEnabled(hasText: Boolean) {
-        val isLoading   = viewModel.isTyping.value == true
-        b.btnSend.isEnabled = hasText && !isLoading
-        b.btnSend.alpha     = if (b.btnSend.isEnabled) 1f else 0.45f
-    }
-
-    // ── Suggestion chips ──────────────────────────────────────────────────────
-    // chip_suggest    → b.chipSuggest
-    // chip_calories   → b.chipCalories
-    // chip_quick      → b.chipQuick
-    // chip_nutrition  → b.chipNutrition
-
-    private fun setupChips() {
-        b.chipSuggest.setOnClickListener {
-            prefill("Suggest a recipe I can make with chicken and rice")
-        }
-        b.chipCalories.setOnClickListener {
-            prefill("How many calories are in a bowl of pho?")
-        }
-        b.chipQuick.setOnClickListener {
-            prefill("Give me 3 quick meal ideas under 30 minutes")
-        }
-        b.chipNutrition.setOnClickListener {
-            prefill("What are the healthiest Vietnamese dishes?")
-        }
-    }
-
-    private fun prefill(text: String) {
-        b.etMessage.apply {
-            setText(text)
-            setSelection(text.length)
-            requestFocus()
-        }
-    }
-
-    // ── Send ──────────────────────────────────────────────────────────────────
-
-    private fun sendMessage() {
+    private fun sendFromInput() {
         val text = b.etMessage.text?.toString()?.trim() ?: return
         if (text.isBlank()) return
         b.etMessage.setText("")
         hideKeyboard()
-        viewModel.sendMessage(text)    // ViewModel xử lý AI — KHÔNG Firestore
+        viewModel.sendMessage(text)
     }
 
-    // ── Observe ───────────────────────────────────────────────────────────────
+    // ── Chips — send directly, NEVER touch the input field ───────────────────
 
-    private fun observeViewModel() {
+    private fun setupChips() {
+        b.chipSuggest.setOnClickListener {
+            viewModel.sendMessage("Suggest a recipe I can make with chicken and rice")
+        }
+        b.chipCalories.setOnClickListener {
+            viewModel.sendMessage("How many calories are in a bowl of pho?")
+        }
+        b.chipQuickMeal.setOnClickListener {
+            viewModel.sendMessage("Give me 3 quick meal ideas under 30 minutes")
+        }
+        b.chipNutrition.setOnClickListener {
+            viewModel.sendMessage("What are the healthiest Vietnamese dishes?")
+        }
+    }
 
+    // ── Observers ─────────────────────────────────────────────────────────────
+
+    private fun observe() {
+
+        // Messages observer — drives the RecyclerView
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
-            val hasMessages = messages.any { !it.isTyping }
+            val hasMessages = messages.isNotEmpty()
 
-            // layout_empty → b.layoutEmpty
-            b.layoutEmpty.visibility = if (hasMessages) View.GONE else View.VISIBLE
-            // rv_chat → b.rvChat
+            b.layoutEmpty.visibility = if (hasMessages) View.GONE  else View.VISIBLE
             b.rvChat.visibility      = if (hasMessages) View.VISIBLE else View.GONE
 
-            // ✅ layout_suggestions → b.layoutSuggestions — LUÔN VISIBLE, không bao giờ GONE
-            b.layoutSuggestions.visibility = View.VISIBLE
-
+            // Pass a new List object — DiffUtil detects the delta
             adapter.submitList(messages.toList()) {
-                if (messages.isNotEmpty()) {
-                    b.rvChat.scrollToPosition(messages.size - 1)
+                // Scroll AFTER the adapter draw pass
+                b.rvChat.post {
+                    if (adapter.itemCount > 0)
+                        b.rvChat.scrollToPosition(adapter.itemCount - 1)
                 }
             }
         }
 
+        // Typing indicator observer
         viewModel.isTyping.observe(viewLifecycleOwner) { typing ->
-            // ✅ card_typing → b.cardTyping — ID đã được thêm vào XML
-            b.cardTyping.visibility = if (typing) View.VISIBLE else View.GONE
-
-            // tv_status → b.tvStatus
             b.tvStatus.text = if (typing) "Thinking…" else "Ready to help"
             b.tvStatus.setTextColor(
-                if (typing)
-                    resources.getColor(android.R.color.holo_orange_dark, null)
-                else
-                    resources.getColor(android.R.color.holo_green_dark, null)
+                requireContext().getColor(
+                    if (typing) android.R.color.holo_orange_dark
+                    else        android.R.color.holo_green_dark
+                )
             )
 
-            setSendEnabled(b.etMessage.text?.isNotBlank() == true)
+            if (typing) showTypingBubble() else hideTypingBubble()
+
+            refreshSendButton(b.etMessage.text?.isNotBlank() == true)
         }
     }
 
-    // ── Keyboard ──────────────────────────────────────────────────────────────
+    // ── Typing bubble animation ───────────────────────────────────────────────
+
+    private fun showTypingBubble() {
+        b.cardTyping.visibility = View.VISIBLE
+        dotAnimSet?.cancel()
+
+        val dots = listOf(b.dot1, b.dot2, b.dot3)
+        val anims = dots.mapIndexed { i, dot ->
+            ObjectAnimator.ofFloat(dot, View.TRANSLATION_Y, 0f, -8f, 0f).apply {
+                duration     = 600
+                startDelay   = i * 160L
+                repeatCount  = ValueAnimator.INFINITE
+                interpolator = AccelerateDecelerateInterpolator()
+            }
+        }
+        dotAnimSet = AnimatorSet().apply {
+            playTogether(*anims.toTypedArray())
+            start()
+        }
+
+        b.rvChat.post {
+            if (adapter.itemCount > 0)
+                b.rvChat.scrollToPosition(adapter.itemCount - 1)
+        }
+    }
+
+    private fun hideTypingBubble() {
+        dotAnimSet?.cancel()
+        dotAnimSet = null
+        listOf(b.dot1, b.dot2, b.dot3).forEach { it.translationY = 0f }
+        b.cardTyping.visibility = View.GONE
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private fun refreshSendButton(hasText: Boolean) {
+        val loading = viewModel.isTyping.value == true
+        b.btnSend.isEnabled = hasText && !loading
+        b.btnSend.alpha     = if (b.btnSend.isEnabled) 1f else 0.4f
+    }
 
     private fun hideKeyboard() {
         val imm = requireContext()
-            .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            .getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                as InputMethodManager
         imm.hideSoftInputFromWindow(b.etMessage.windowToken, 0)
+    }
+
+    override fun onDestroyView() {
+        dotAnimSet?.cancel()
+        dotAnimSet = null
+        super.onDestroyView()
+        _b = null
     }
 }

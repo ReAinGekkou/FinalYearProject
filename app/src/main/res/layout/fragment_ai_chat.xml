@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    fragment_ai_chat.xml
+    ─────────────────────────────────────────────────────────────────────
+    SINGLE source of truth for both AiChatFragment AND CommunityChatFragment.
+    Both fragments inflate this same layout.
+
+    ALL IDs that code references are declared here:
+      rvChat, etMessage, btnSend, tvStatus,
+      layoutEmpty, layoutSuggestions (= hsvSuggestions),
+      cardTyping, chipSuggest, chipCalories, chipQuick, chipNutrition
+-->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_screen">
+    android:background="#F8F9FA">
 
-    <!-- ── Toolbar ───────────────────────────────────────────────────────── -->
+    <!-- ── Toolbar ───────────────────────────────────────────────────── -->
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="0dp"
@@ -29,7 +40,8 @@
                 android:layout_height="34dp"
                 android:src="@drawable/ic_ai_avatar"
                 android:scaleType="centerCrop"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.AIFoodApp.Pill" />
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.AIFoodApp.Pill"
+                android:contentDescription="AI" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -38,30 +50,33 @@
                 android:layout_marginStart="10dp">
 
                 <TextView
+                    android:id="@+id/tv_toolbar_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Food AI"
                     android:textSize="15sp"
                     android:fontFamily="sans-serif-bold"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="#212121" />
 
-                <!-- tv_status → binding: tvStatus -->
+                <!-- tvStatus: "Ready to help" / "Thinking…" -->
                 <TextView
-                    android:id="@+id/tv_status"
+                    android:id="@+id/tvStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Ready to help"
                     android:textSize="11sp"
-                    android:textColor="#4CAF50" />
+                    android:textColor="#4CAF50"
+                    tools:text="Ready to help" />
 
             </LinearLayout>
+
         </LinearLayout>
+
     </androidx.appcompat.widget.Toolbar>
 
-    <!-- ── Empty state ────────────────────────────────────────────────────── -->
-    <!-- layout_empty → binding: layoutEmpty -->
+    <!-- ── Empty state ────────────────────────────────────────────────── -->
     <LinearLayout
-        android:id="@+id/layout_empty"
+        android:id="@+id/layoutEmpty"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:orientation="vertical"
@@ -69,45 +84,42 @@
         android:paddingHorizontal="32dp"
         android:visibility="visible"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:layout_constraintBottom_toTopOf="@id/layout_suggestions"
+        app:layout_constraintBottom_toTopOf="@id/layoutSuggestions"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         tools:visibility="visible">
 
         <ImageView
-            android:id="@+id/iv_empty_icon"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
             android:src="@drawable/ic_ai_avatar"
-            android:alpha="0.85"
+            android:alpha="0.8"
             android:contentDescription="@null" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="16dp"
             android:text="Ask me anything about food 🍜"
-            android:textSize="18sp"
+            android:textSize="17sp"
             android:fontFamily="sans-serif-bold"
-            android:textColor="@color/text_primary"
-            android:gravity="center"
-            android:lineSpacingMultiplier="1.3" />
+            android:textColor="#212121"
+            android:gravity="center" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="6dp"
             android:text="Recipes · Nutrition · Cooking tips"
             android:textSize="13sp"
-            android:textColor="@color/text_hint"
+            android:textColor="#9E9E9E"
             android:gravity="center" />
 
     </LinearLayout>
 
-    <!-- ── Messages RecyclerView ──────────────────────────────────────────── -->
-    <!-- rv_chat → binding: rvChat -->
+    <!-- ── Messages RecyclerView ──────────────────────────────────────── -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_chat"
+        android:id="@+id/rvChat"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
@@ -119,28 +131,26 @@
         app:stackFromEnd="true"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:layout_constraintBottom_toTopOf="@id/card_typing"
+        app:layout_constraintBottom_toTopOf="@id/cardTyping"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         tools:listitem="@layout/item_chat_ai"
-        tools:itemCount="4"
         tools:visibility="visible" />
 
-    <!-- ✅ FIX: card_typing THÊM MỚI → binding: cardTyping              -->
-    <!-- Đây là lý do lỗi "Unresolved reference 'cardTyping'"             -->
-    <!-- Hiển thị "AI đang gõ…" animation khi chờ phản hồi              -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/card_typing"
+    <!-- ── Typing indicator ───────────────────────────────────────────── -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardTyping"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginBottom="6dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="2dp"
         android:visibility="gone"
-        app:cardCornerRadius="16dp"
-        app:cardBackgroundColor="@color/white"
-        app:cardElevation="2dp"
+        app:cardCornerRadius="18dp"
+        app:cardBackgroundColor="#F1F3F4"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp"
+        app:layout_constraintBottom_toTopOf="@id/layoutSuggestions"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/layout_suggestions"
         tools:visibility="visible">
 
         <LinearLayout
@@ -148,129 +158,132 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="10dp">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
 
-            <!-- 3 chấm nhảy — dùng ProgressBar tạm hoặc thay bằng Lottie -->
-            <ProgressBar
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:indeterminate="true"
-                android:indeterminateTint="@color/brand_primary" />
+            <View
+                android:id="@+id/dot1"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/bg_typing_dot"
+                android:layout_marginEnd="5dp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="AI is thinking…"
-                android:textSize="13sp"
-                android:textColor="@color/text_secondary" />
+            <View
+                android:id="@+id/dot2"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/bg_typing_dot"
+                android:layout_marginEnd="5dp" />
+
+            <View
+                android:id="@+id/dot3"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/bg_typing_dot" />
 
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
 
-    <!-- ── Suggestion chips ───────────────────────────────────────────────── -->
-    <!-- layout_suggestions → binding: layoutSuggestions                     -->
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── Suggestion chips (hsvSuggestions = this view's old alias) ─── -->
     <HorizontalScrollView
-        android:id="@+id/layout_suggestions"
+        android:id="@+id/layoutSuggestions"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:paddingHorizontal="12dp"
-        android:paddingTop="8dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="6dp"
         android:paddingBottom="4dp"
         android:scrollbars="none"
         android:overScrollMode="never"
-        android:background="@color/bg_screen"
-        app:layout_constraintBottom_toTopOf="@id/divider_input"
+        android:background="#F8F9FA"
+        app:layout_constraintBottom_toTopOf="@id/dividerInput"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
-            android:id="@+id/chip_row"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- chip_suggest → binding: chipSuggest -->
             <com.google.android.material.chip.Chip
-                android:id="@+id/chip_suggest"
+                android:id="@+id/chipSuggest"
                 style="@style/Widget.MaterialComponents.Chip.Action"
                 android:layout_width="wrap_content"
                 android:layout_height="34dp"
                 android:text="🍳 Suggest recipe"
                 android:textSize="12sp"
-                android:textColor="@color/brand_primary"
+                android:textColor="#2E7D32"
                 app:chipBackgroundColor="#E8F5E9"
-                app:chipStrokeColor="@color/brand_primary"
+                app:chipStrokeColor="#2E7D32"
                 app:chipStrokeWidth="1dp"
                 app:chipCornerRadius="17dp"
                 app:chipMinHeight="34dp"
                 android:layout_marginEnd="8dp" />
 
-            <!-- chip_calories → binding: chipCalories -->
             <com.google.android.material.chip.Chip
-                android:id="@+id/chip_calories"
+                android:id="@+id/chipCalories"
                 style="@style/Widget.MaterialComponents.Chip.Action"
                 android:layout_width="wrap_content"
                 android:layout_height="34dp"
                 android:text="🔥 Calories"
                 android:textSize="12sp"
-                android:textColor="@color/brand_primary"
+                android:textColor="#2E7D32"
                 app:chipBackgroundColor="#E8F5E9"
-                app:chipStrokeColor="@color/brand_primary"
+                app:chipStrokeColor="#2E7D32"
                 app:chipStrokeWidth="1dp"
                 app:chipCornerRadius="17dp"
                 app:chipMinHeight="34dp"
                 android:layout_marginEnd="8dp" />
 
-            <!-- chip_quick → binding: chipQuick -->
             <com.google.android.material.chip.Chip
-                android:id="@+id/chip_quick"
+                android:id="@+id/chipQuickMeal"
                 style="@style/Widget.MaterialComponents.Chip.Action"
                 android:layout_width="wrap_content"
                 android:layout_height="34dp"
                 android:text="⚡ Quick meals"
                 android:textSize="12sp"
-                android:textColor="@color/brand_primary"
+                android:textColor="#2E7D32"
                 app:chipBackgroundColor="#E8F5E9"
-                app:chipStrokeColor="@color/brand_primary"
+                app:chipStrokeColor="#2E7D32"
                 app:chipStrokeWidth="1dp"
                 app:chipCornerRadius="17dp"
                 app:chipMinHeight="34dp"
                 android:layout_marginEnd="8dp" />
 
-            <!-- chip_nutrition → binding: chipNutrition -->
             <com.google.android.material.chip.Chip
-                android:id="@+id/chip_nutrition"
+                android:id="@+id/chipNutrition"
                 style="@style/Widget.MaterialComponents.Chip.Action"
                 android:layout_width="wrap_content"
                 android:layout_height="34dp"
                 android:text="🥗 Nutrition"
                 android:textSize="12sp"
-                android:textColor="@color/brand_primary"
+                android:textColor="#2E7D32"
                 app:chipBackgroundColor="#E8F5E9"
-                app:chipStrokeColor="@color/brand_primary"
+                app:chipStrokeColor="#2E7D32"
                 app:chipStrokeWidth="1dp"
                 app:chipCornerRadius="17dp"
                 app:chipMinHeight="34dp" />
 
         </LinearLayout>
+
     </HorizontalScrollView>
 
-    <!-- ── Divider ─────────────────────────────────────────────────────────── -->
+    <!-- ── Divider ────────────────────────────────────────────────────── -->
     <View
-        android:id="@+id/divider_input"
+        android:id="@+id/dividerInput"
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:background="#EEEEEE"
-        app:layout_constraintBottom_toTopOf="@id/layout_input"
+        app:layout_constraintBottom_toTopOf="@id/layoutInput"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- ── Input area ─────────────────────────────────────────────────────── -->
-    <!-- layout_input → binding: layoutInput                                  -->
+    <!-- ── Input row ──────────────────────────────────────────────────── -->
     <LinearLayout
-        android:id="@+id/layout_input"
+        android:id="@+id/layoutInput"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -283,9 +296,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- til_message → binding: tilMessage -->
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/til_message"
+            android:id="@+id/tilMessage"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -298,12 +310,11 @@
             app:boxStrokeColor="#E0E0E0"
             app:boxStrokeWidth="1.5dp"
             app:boxStrokeWidthFocused="1.5dp"
-            app:hintTextColor="@color/text_hint"
+            app:hintTextColor="#9E9E9E"
             app:boxBackgroundColor="@color/white">
 
-            <!-- et_message → binding: etMessage -->
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_message"
+                android:id="@+id/etMessage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textMultiLine|textCapSentences"
@@ -321,23 +332,21 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- btn_send → binding: btnSend -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_send"
+            android:id="@+id/btnSend"
             android:layout_width="46dp"
             android:layout_height="46dp"
-            android:layout_marginStart="8dp"
-            android:padding="0dp"
+            android:layout_marginStart="9dp"
+            android:padding="15dp"
             android:minWidth="0dp"
             android:minHeight="0dp"
             app:icon="@drawable/ic_send"
             app:iconTint="@color/white"
             app:iconSize="20dp"
             app:iconPadding="0dp"
-            app:backgroundTint="@color/brand_primary"
+            app:backgroundTint="#2E7D32"
             app:cornerRadius="23dp"
-            android:stateListAnimator="@null"
-            app:elevation="2dp" />
+            android:stateListAnimator="@null" />
 
     </LinearLayout>
 
